@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NAAC")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bda1f7ca132ed8150715148772fdd50483255cd1")]
 [assembly: System.Reflection.AssemblyProductAttribute("NAAC")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NAAC")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
