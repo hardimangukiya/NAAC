@@ -1,0 +1,380 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Export Reports";
+    var tables = Model != null ? Model.GroupBy(r => r.Table).ToList() : new List<IGrouping<NAAC.Models.NAACTable, NAAC.Models.DataRecord>>();
+    var currentUserName = Context.Session.GetString("UserName") ?? "HOD";
+    var currentDate = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="mb-5">
+        <h2 class="fw-800 mb-0">Consolidated Reports</h2>
+        <p class="text-secondary small">Generate and export fully verified NAAC documentation.</p>
+    </div>
+
+    <div class="glass-panel p-3 px-4 mt-4 mb-3 border-0 shadow-sm d-flex align-items-center gap-3 flex-wrap"
+         style="position: relative; z-index: 100;">
+        
+        <!-- 1. Table Selector -->
+        <div class="dropdown">
+            <button class="btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-medium"
+                    type="button" id="reportTableDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                    style="background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); min-width: 280px;">
+                <i class="bi bi-funnel-fill text-primary"></i>
+                <span id="selectedReportFilterText" style="color: var(--text-primary);">-- Choose a structural table --</span>
+                <i class="bi bi-chevron-down ms-auto small" style="color: var(--text-secondary);"></i>
+            </button>
+            <ul class="dropdown-menu shadow border-0 mt-1 rounded-3 p-2"
+                aria-labelledby="reportTableDropdownBtn"
+                style="z-index:9999; min-width:380px; max-height:420px; overflow-y:auto; background: var(--card-bg); border: 1px solid var(--glass-border) !important;">
+                <li>
+                    <a class="dropdown-item rounded-2 mb-1 report-filter-item" href="#" data-value=""
+                       style="color: var(--text-primary);">
+                        <i class="bi bi-x-circle me-2 text-secondary"></i> Hide Tables
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1 opacity-25"></li>
+                @foreach (var group in tables)
+                {
+                    <li>
+                        <a class="dropdown-item rounded-2 mb-1 report-filter-item" href="#"
+                           data-value="@group.Key.Id"
+                           style="color: var(--text-primary);">
+                            <span class="badge bg-primary bg-opacity-10 text-primary me-2 small">@group.Key.TableNumber</span>
+                            @(group.Key.Name.Length > 40 ? group.Key.Name.Substring(0, 37) + "..." : group.Key.Name)
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <!-- 2. Year & Faculty Filters -->
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <select id="ayFilterMaster" class="btn rounded-pill px-4 py-2 fw-medium text-start flex-grow-1 flex-md-grow-0 master-filter"
+                    style="background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); min-width: 180px;">
+                <option value="">-- All Academic Years --</option>
+                @{
+                    var currentYear = DateTime.Now.Month >= 6 ? DateTime.Now.Year : DateTime.Now.Year - 1;
+                    for (int i = 0; i < 6; i++)
+                    {
+                        var start = currentYear - i;
+                        var end = (start + 1) % 100;
+                        var ay = $"{start}-{end:D2}";
+                        <option value="@ay">@ay</option>
+                    }
+                }
+            </select>
+
+            <select id="facultyFilterMaster" class="btn rounded-pill px-4 py-2 fw-medium text-start flex-grow-1 flex-md-grow-0 master-filter"
+                    style="background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-primary); min-width: 220px;">
+                <option value="">-- All Contributors --</option>
+                @if (ViewBag.FacultyList != null)
+                {
+                    @foreach (var f in (IEnumerable<NAAC.Models.User>)ViewBag.FacultyList)
+                    {
+                        <option value="@f.FullName">@f.FullName</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Container for dynamic tables -->
+    <div id="tablesContainer">
+        @foreach (var group in tables)
+        {
+            var firstRecord = group.First();
+            var jsonColumns = new List<string>();
+            try {
+                // Union keys across ALL records so no column is missed
+                foreach (var rec in group)
+                {
+                    var dataDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(rec.JsonData ?? "{}");
+                    if (dataDict != null)
+                    {
+                        foreach (var key in dataDict.Keys)
+                        {
+                            if (!jsonColumns.Contains(key))
+                                jsonColumns.Add(key);
+                        }
+                    }
+                }
+            } catch { }
+
+            <div id="table-wrapper-@group.Key.Id" class="d-none animate-fade-in table-wrapper">
+                <div class="glass-panel p-0 overflow-hidden border-0 shadow-lg mb-5">
+                    <div class="p-4 bg-primary bg-opacity-10 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-10">
+                        <div>
+                            <span class="badge bg-primary text-white mb-2 py-2 px-3 rounded-pill shadow-sm">Table @group.Key.TableNumber</span>
+                            <h5 class="fw-bold mb-0">@group.Key.Name</h5>
+                        </div>
+                        <div class="text-end text-secondary small d-none d-md-block">
+                            <div><strong>Verified by:</strong> @currentUserName</div>
+                            <div><strong>Compiled on:</strong> @currentDate</div>
+                        </div>
+                    </div>
+                    <div class="p-4 table-responsive">
+                        <table id="export-table-@group.Key.Id" class="table-glass table-hover align-middle export-data-table w-100"
+                               data-table-name="Table @group.Key.TableNumber: @group.Key.Name">
+                            <thead class="text-nowrap">
+                                <tr>
+                                    <th>Academic Year</th>
+                                    <th>Faculty Contributor</th>
+                                    @foreach (var col in jsonColumns)
+                                    {
+                                        <th>@col</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var record in group)
+                                {
+                                    var rowData = new Dictionary<string, string>();
+                                    try { rowData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(record.JsonData ?? "{}") ?? new Dictionary<string, string>(); } catch { }
+
+                                    <tr>
+                                        <td><strong>@record.AcademicYear</strong></td>
+                                        <td data-export="@(record.Faculty?.FullName ?? "Unknown")">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold dt-no-export" style="width: 25px; height: 25px; font-size: 0.7rem;" aria-hidden="true">
+                                                    @((record.Faculty?.FullName ?? "U").Substring(0, 1).ToUpper())
+                                                </div>
+                                                <span class="small fw-medium">@(record.Faculty?.FullName ?? "Unknown")</span>
+                                            </div>
+                                        </td>
+                                        @foreach (var col in jsonColumns)
+                                        {
+                                            var cellVal = rowData.ContainsKey(col) ? rowData[col] : "-";
+                                            <td class="small text-break" style="min-width: 150px;">
+                                                @if (!string.IsNullOrEmpty(cellVal) && (cellVal.StartsWith("/uploads/") || cellVal.StartsWith("http")))
+                                                {
+                                                    var absoluteUrl = cellVal.StartsWith("http") ? cellVal : (Context.Request.Scheme + "://" + Context.Request.Host + cellVal);
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <a href="@cellVal" target="_blank" class="btn btn-sm btn-premium-primary rounded-pill py-1 px-3 d-inline-flex align-items-center gap-2" style="font-size: 0.7rem; width: fit-content;">
+                                                            <i class="bi bi-file-earmark-text"></i> View Doc
+                                                        </a>
+                                                        <!-- Hidden URL for Excel/PDF exports to capture -->
+                                                        <span class="d-none" style="font-size: 0.1px;">@absoluteUrl</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-secondary opacity-50">@(string.IsNullOrEmpty(cellVal) ? "No File" : cellVal)</span>
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (!tables.Any())
+    {
+        <div class="glass-panel p-5 text-center mt-4">
+            <div class="opacity-25 mb-4"><i class="bi bi-file-earmark-x fs-1" style="font-size: 3rem !important;"></i></div>
+            <h4 class="text-secondary fw-bold">No Verified Records Ready</h4>
+            <p class="text-muted">Faculty must submit data and you must approve them via the Approvals module before they become available for compliance reporting.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <!-- Include DataTables Core and Buttons extensions loaded straight from secure CDNs -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" />
+    
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Required for export capabilities -->
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <style>
+        .report-dropdown-menu {
+            z-index: 2000 !important;
+            background: var(--card-bg) !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
+            border: 1px solid var(--glass-border) !important;
+        }
+        .report-filter-item:hover {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        .table-wrapper {
+            margin-top: 2rem;
+        }
+        .dataTables_wrapper .dt-buttons {
+            float: left;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Reports Dark Mode Aesthetics */
+        .table-glass { 
+            background: transparent !important; 
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-glass thead th { 
+            background: rgba(var(--accent-rgb, 99, 102, 241), 0.05);
+            color: var(--text-primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 1.25rem 1rem;
+            border-bottom: 2px solid var(--glass-border) !important;
+        }
+        .table-glass tbody td {
+            padding: 1.25rem 1rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--glass-border) !important;
+        }
+
+        [data-theme="dark"] .dataTables_wrapper .dataTables_length,
+        [data-theme="dark"] .dataTables_wrapper .dataTables_filter,
+        [data-theme="dark"] .dataTables_wrapper .dataTables_info,
+        [data-theme="dark"] .dataTables_wrapper .dataTables_processing,
+        [data-theme="dark"] .dataTables_wrapper .dataTables_paginate {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="dark"] .dataTables_wrapper .dataTables_filter input {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: #f8fafc !important;
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+
+        [data-theme="dark"] .page-link {
+            background-color: rgba(255,255,255,0.05) !important;
+            border-color: rgba(255,255,255,0.1) !important;
+            color: #94a3b8 !important;
+        }
+        [data-theme="dark"] .page-item.active .page-link {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        [data-theme="dark"] .table-hover tbody tr:hover {
+            background-color: rgba(255,255,255,0.02) !important;
+        }
+
+        /* Fix Select Option Visibility */
+        .ay-inline-filter option, .fac-inline-filter option {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            var currentUser = '@currentUserName';
+            var currTime = '@currentDate';
+
+            // Initialize all datatables invisibly
+            $('.export-data-table').each(function() {
+                var tableName = $(this).attr('data-table-name');
+                var exportMessage = 'Report Generated By: ' + currentUser + '   |   Verification Timestamp: ' + currTime;
+                var tableId = $(this).attr('id');
+
+                var table = $(this).DataTable({
+                    dom: '<"row mb-4 pt-3 align-items-center"<"col-12 d-flex justify-content-between align-items-center"B<"filters-info">>>rt<"row mt-3"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                    buttons: [
+                        {
+                            extend: 'excelHtml5',
+                            className: 'btn btn-premium-primary btn-sm px-4 me-2 rounded-pill shadow-sm py-2 text-white',
+                            text: '<i class="bi bi-file-earmark-excel-fill me-2"></i> Download in Excel',
+                            title: 'NAAC Compliance Report - ' + tableName,
+                            messageTop: exportMessage,
+                            exportOptions: {
+                                format: {
+                                    body: function(data, row, col, node) {
+                                        var exportVal = $(node).attr('data-export');
+                                        if (exportVal) return exportVal;
+                                        return $(node).text().trim();
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            className: 'btn btn-danger btn-sm px-4 rounded-pill shadow-sm py-2 text-white',
+                            text: '<i class="bi bi-file-earmark-pdf-fill me-2"></i> Download in PDF',
+                            title: 'NAAC Compliance Report - ' + tableName,
+                            messageTop: exportMessage,
+                            orientation: 'landscape',
+                            pageSize: 'A4',
+                            exportOptions: {
+                                format: {
+                                    body: function(data, row, col, node) {
+                                        var exportVal = $(node).attr('data-export');
+                                        if (exportVal) return exportVal;
+                                        return $(node).text().trim();
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    pageLength: 25,
+                    ordering: true,
+                    language: {
+                        search: "",
+                        searchPlaceholder: "Search..."
+                    }
+                });
+
+                // Clear the extra labels/containers that are no longer needed
+                $(this).closest('.dataTables_wrapper').find('.filters-info').empty();
+            });
+
+            // Handle Master Filter changes (apply to ALL tables)
+            $('.master-filter').on('change', function() {
+                var ay = $('#ayFilterMaster').val();
+                var fac = $('#facultyFilterMaster').val();
+                
+                $('.export-data-table').each(function() {
+                    var table = $(this).DataTable();
+                    table.columns(0).search(ay); // AY is col 0
+                    table.columns(1).search(fac); // Faculty is col 1
+                    table.draw();
+                });
+            });
+
+            // Handle Selecting Table Filter UI
+            $('.report-filter-item').on('click', function(e) {
+                e.preventDefault();
+                
+                var selectedId = $(this).attr('data-value');
+                var text = $(this).text();
+                
+                // Update button text
+                if (selectedId === "") {
+                    $("#selectedReportFilterText").text("-- Choose a structural table --");
+                } else {
+                    $("#selectedReportFilterText").text(text.length > 35 ? text.substring(0, 32) + "..." : text);
+                }
+                
+                $('.table-wrapper').addClass('d-none');
+                if(selectedId) {
+                    $('#table-wrapper-' + selectedId).removeClass('d-none');
+                }
+            });
+            
+            // Fix DataTables search input styling
+            $('.dataTables_filter input').addClass('form-control glass-input rounded-pill px-4 ms-2').css('width', '250px');
+        });
+    </script>
+}

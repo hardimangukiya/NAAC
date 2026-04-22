@@ -1,0 +1,137 @@
+@model NAAC.Models.HODRegistrationViewModel
+
+@{
+    ViewData["Title"] = "HOD Registration";
+}
+
+<div class="auth-container">
+    <div class="container">
+        <div class="glass-panel auth-form-card animate-fade-in">
+            <!-- Greeting -->
+            <div class="text-center mb-5">
+                <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                <h2 class="mt-3">Welcome to the NAAC System</h2>
+                <p class="text-secondary">Registration Portal specifically for Department HODs</p>
+            </div>
+
+            <!-- Step 1: Registration Form -->
+            <div id="registration-section">
+                <form id="registrationForm" method="post" asp-action="Register">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating-custom">
+                                <label asp-for="FullName"></label>
+                                <input asp-for="FullName" class="form-control-custom" placeholder="Enter full name" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating-custom">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" class="form-control-custom" placeholder="abc@gmail.com" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating-custom">
+                        <label asp-for="MobileNumber"></label>
+                        <input asp-for="MobileNumber" class="form-control-custom" placeholder="10-digit mobile number" maxlength="10" />
+                        <span asp-validation-for="MobileNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating-custom">
+                                <label asp-for="Password"></label>
+                                <input asp-for="Password" type="password" class="form-control-custom" id="passwordInput" placeholder="Create password" />
+                                <i class="bi bi-eye password-toggle" id="togglePassword"></i>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating-custom">
+                                <label asp-for="ConfirmPassword"></label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control-custom" id="confirmPasswordInput" placeholder="Confirm password" />
+                                <i class="bi bi-eye password-toggle" id="toggleConfirmPassword"></i>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating-custom">
+                        <label asp-for="CollegeName"></label>
+                        <input asp-for="CollegeName" class="form-control-custom" placeholder="Enter college or institute name" />
+                        <span asp-validation-for="CollegeName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-floating-custom">
+                        <label asp-for="UniversityName"></label>
+                        <input asp-for="UniversityName" class="form-control-custom" placeholder="Enter university name" />
+                        <span asp-validation-for="UniversityName" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn-portal w-100 py-3 mt-4">
+                        Register Now <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: OTP Verification -->
+            <div id="otp-section" class="text-center">
+                <h3 class="mb-3">Verification Required</h3>
+                <p class="text-secondary">We've sent a 6-digit verification code to your email.</p>
+                
+                <div class="otp-inputs">
+                    <input type="text" maxlength="1" class="otp-box" />
+                    <input type="text" maxlength="1" class="otp-box" />
+                    <input type="text" maxlength="1" class="otp-box" />
+                    <input type="text" maxlength="1" class="otp-box" />
+                    <input type="text" maxlength="1" class="otp-box" />
+                    <input type="text" maxlength="1" class="otp-box" />
+                </div>
+
+                <div id="otp-error" class="text-danger mb-4 small" style="display:none;">Invalid code. Please try again.</div>
+
+                <button type="button" id="verifyBtn" class="btn-portal w-100 py-3 mb-4">
+                    Verify & Complete
+                </button>
+
+                <p class="text-secondary mb-0">
+                    Didn't receive a code? <a href="#" class="text-primary fw-bold" id="resendOtp">Resend OTP</a>
+                </p>
+            </div>
+
+            <!-- Step 3: Success Message -->
+            <div id="success-section" class="text-center py-4">
+                <div class="success-icon">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <h2 class="mb-3">Registration Successful!</h2>
+                <p class="text-secondary mb-5">Your HOD account has been created. You can now log in to the system.</p>
+                
+                <a asp-action="Login" class="btn-portal px-5 py-3">
+                    Continue to Login
+                </a>
+            </div>
+
+            <!-- New Navigation Links -->
+            <div class="auth-footer-links mt-5 pt-4 border-top">
+                <a asp-action="Login" class="text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i> Already have an account? <span class="text-primary fw-bold">Login</span>
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="text-secondary text-decoration-none">
+                    Back to Home <i class="bi bi-house-door ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/account-registration.js"></script>
+}

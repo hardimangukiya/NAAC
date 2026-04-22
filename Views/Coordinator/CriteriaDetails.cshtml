@@ -1,0 +1,780 @@
+@model NAAC.Models.Criteria
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Structural Schema Studio";
+    var tables = ViewBag.Tables as List<NAAC.Models.NAACTable>;
+}
+
+<div class="animate-fade-in p-2 p-md-0">
+    <!-- Studio Header -->
+    <div class="d-flex justify-content-between align-items-end mb-5 pb-3 border-bottom border-white border-opacity-10 flex-wrap gap-4">
+        <div class="d-flex align-items-center gap-4">
+            <a asp-action="ManageCriteria" class="btn-back-glass shadow-sm">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb smaller text-uppercase ls-1 fw-700 opacity-50 mb-0">
+                        <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-main">Hub</a></li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">Schema Studio</li>
+                    </ol>
+                </nav>
+                <h1 class="display-6 fw-800 mb-0 tracking-tight text-gradient-primary">Criterion @Model.Number: @Model.Title</h1>
+                <p class="text-secondary smaller mt-1 mb-0">Architect institutional mapping frameworks and data Spec definitions.</p>
+            </div>
+        </div>
+        <div class="d-flex gap-3 pb-2">
+            <button class="btn btn-premium-glow rounded-pill px-4 fw-bold border-0" data-bs-toggle="modal" data-bs-target="#addTableModal">
+                <i class="bi bi-plus-lg me-2"></i>New Mapping Module
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Main Architecture Canvas -->
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-4" id="tableList">
+                @if (tables != null && tables.Any())
+                {
+                    for (int i = 0; i < tables.Count; i++)
+                    {
+                        var table = tables[i];
+                        <div class="premium-glass-card stagger-item" style="--item-index: @i">
+                            <div class="p-4 border-bottom border-white border-opacity-5 d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-4">
+                                    <div class="crit-indicator small-ref">
+                                        <span class="num text-white">@table.TableNumber</span>
+                                        <span class="tag text-white">TB</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="fw-800 text-main mb-1">@table.Name</h4>
+                                        <p class="smaller text-secondary opacity-75 mb-0">@table.Description</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn-action-glass text-primary" data-bs-toggle="modal" data-bs-target="#editTableModal-@table.Id">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <form asp-action="DeleteTable" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@table.Id" />
+                                        <input type="hidden" name="criteriaId" value="@Model.Id" />
+                                        <button type="submit" class="btn-action-glass text-danger" onclick="return confirm('Dissolve this mapping module?')">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="smaller fw-800 text-primary text-uppercase ls-1 mb-0">Specification Headers</h6>
+                                    <button class="btn btn-sm btn-link text-primary p-0 smaller fw-bold text-decoration-none hover-scale" data-bs-toggle="modal" data-bs-target="#addColumnModal-@table.Id">
+                                        <i class="bi bi-plus-circle-fill me-1"></i>Append Field
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table-glass-studio w-100 align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="ps-0 py-2 smaller text-secondary uppercase ls-1 opacity-50">Label & Index</th>
+                                                <th class="py-2 smaller text-secondary uppercase ls-1 opacity-50">Data Engine</th>
+                                                <th class="py-2 smaller text-secondary uppercase ls-1 opacity-50">Logic</th>
+                                                <th class="text-end pe-0 py-2 smaller text-secondary uppercase ls-1 opacity-50">Options</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (table.Columns != null && table.Columns.Any())
+                                            {
+                                                foreach (var col in table.Columns.OrderBy(c => c.Order))
+                                                {
+                                                    <tr>
+                                                        <td class="ps-0 py-3">
+                                                            <div class="fw-bold text-main small">@col.HeaderName</div>
+                                                            <div class="smaller text-secondary opacity-40">Position: #@col.Order</div>
+                                                        </td>
+                                                        <td class="py-3">
+                                                            <div class="badge-glass">
+                                                                <i class="bi @(col.DataType == "Dropdown" ? "bi-list-ul" : col.DataType == "File" ? "bi-paperclip" : "bi-input-cursor-text") me-2"></i>
+                                                                @col.DataType.ToUpper()
+                                                            </div>
+                                                        </td>
+                                                        <td class="py-3">
+                                                            @if (col.DataType == "Dropdown")
+                                                            {
+                                                                <span class="smaller text-success fw-bold"><i class="bi bi-diagram-2-fill me-1"></i> Branching</span>
+                                                            }
+                                                            else if (col.DependsOnColumnId != null)
+                                                            {
+                                                                <span class="smaller text-info fw-bold opacity-75">Conditional</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="smaller text-secondary opacity-30 italic">Static</span>
+                                                            }
+                                                        </td>
+                                                        <td class="text-end pe-0 py-3">
+                                                            <div class="d-flex justify-content-end gap-2">
+                                                                <button class="btn-icon-mini text-primary" data-bs-toggle="modal" data-bs-target="#editColModal-@col.Id">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                                <form asp-action="DeleteColumn" method="post" class="d-inline">
+                                                                    <input type="hidden" name="id" value="@col.Id" />
+                                                                    <input type="hidden" name="criteriaId" value="@Model.Id" />
+                                                                    <button type="submit" class="btn-icon-mini text-danger"><i class="bi bi-x-lg"></i></button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="4" class="text-center py-5 opacity-20">
+                                                        <i class="bi bi-layers-half fs-1 mb-2"></i>
+                                                        <div class="smaller fw-bold">No structural specification fields.</div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="premium-glass-card p-5 text-center border-dashed">
+                         <i class="bi bi-folder-plus fs-1 text-primary opacity-20 mb-3"></i>
+                         <h5 class="fw-800 text-white">Empty Blueprint</h5>
+                         <p class="text-secondary small mb-4">Initialize your first structural table to begin the architecture.</p>
+                         <button class="btn btn-premium-glow rounded-pill px-5 py-3" data-bs-toggle="modal" data-bs-target="#addTableModal">
+                             <i class="bi bi-plus-circle me-2"></i>Start Building
+                         </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Studio Sidebar -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4 sticky-top" style="top: 2rem;">
+                <!-- Intelligence Card -->
+                <div class="premium-glass-card p-5 border-0 bg-gradient-sidebar relative overflow-hidden">
+                    <div class="glow-orb"></div>
+                    <div class="relative-content">
+                        <div class="stat-icon-large bg-primary bg-opacity-20 text-primary mb-4">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                        <h4 class="fw-800 text-main mb-2">Architect Rules</h4>
+                        <p class="text-secondary smaller opacity-75 mb-4">Define headers that faculty will use for institutional data intake.</p>
+                        
+                        <div class="bg-white bg-opacity-5 rounded-4 p-4 border border-white border-opacity-10 mb-4">
+                             <div class="d-flex gap-3 text-info shadow-none">
+                                <i class="bi bi-lightbulb-fill mt-1"></i>
+                                <p class="smaller mb-0 opacity-80 text-info"><strong>Dropdown Path:</strong> You can nest sub-headers within dropdown selections for complex branching logic.</p>
+                             </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button class="btn btn-premium-glow py-3 fw-bold smaller text-uppercase" data-bs-toggle="modal" data-bs-target="#addTableModal">
+                                <i class="bi bi-cloud-plus me-2"></i>New Data Module
+                            </button>
+                            <a asp-action="ManageCriteria" class="btn-portal-glass py-3 fw-bold smaller text-main ls-1 text-uppercase">
+                                <i class="bi bi-arrow-left-circle me-2"></i>Return to Hub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Sync Info -->
+                <div class="glass-info-item">
+                    <div class="icon-box text-success"><i class="bi bi-cloud-check-fill"></i></div>
+                    <div>
+                        <div class="text-secondary smaller fw-bold ls-1 uppercase">Schema Status</div>
+                        <div class="text-main small fw-bold">Synchronized with Data Lake</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Definitions - Updated to Premium Styles -->
+
+<div class="modal fade" id="addTableModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content premium-modal-glass border-0 shadow-2xl p-4">
+            <div class="modal-header border-0 pb-2">
+                <h5 class="fw-800 text-main mb-0"><i class="bi bi-grid-plus me-2 text-primary"></i>Architect New Table</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddTable" method="post">
+                <input type="hidden" name="CriteriaId" value="@Model.Id" />
+                <div class="modal-body py-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <label class="text-secondary smaller fw-bold mb-1 d-block font-outfit">TABLE ID</label>
+                            <input type="text" name="TableNumber" class="glass-input" placeholder="e.g. 5.1.1" required>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="text-secondary smaller fw-bold mb-1 d-block font-outfit">METRIC TITLE</label>
+                            <input type="text" name="Name" class="glass-input" placeholder="e.g. Institutional Scholarship disbursements" required>
+                        </div>
+                    </div>
+
+                    <label class="text-secondary smaller fw-bold mb-1 d-block font-outfit">POLICY CONTEXT</label>
+                    <textarea name="Description" class="glass-input mb-5" style="height: 100px" placeholder="Contextual guidance..."></textarea>
+                    
+                    <div class="mt-4 pt-4 border-top border-white border-opacity-10">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 class="text-primary fw-800 smaller text-uppercase ls-1 mb-0">Initial Fields Construction</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold" onclick="addColumnRow()">
+                                <i class="bi bi-plus-circle me-1"></i>Append Field
+                            </button>
+                        </div>
+                        
+                        <div id="initialColumnsContainer">
+                            <!-- Initial Rows Template -->
+                            <div id="col-row-initial" class="column-entry-row mb-4 p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-5 position-relative">
+                                <button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 mt-2 me-2" onclick="removeColumnRow('col-row-initial')">
+                                    <i class="bi bi-x-circle-fill fs-5"></i>
+                                </button>
+                                <div class="row g-4">
+                                    <div class="col-md-7">
+                                        <label class="text-secondary smaller fw-bold mb-1 d-block">FIELD LABEL</label>
+                                        <input type="text" name="Columns[0].HeaderName" class="glass-input header-name-input" required>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="text-secondary smaller fw-bold mb-1 d-block">SPEC TYPE</label>
+                                        <select name="Columns[0].DataType" class="glass-input data-type-input" onchange="toggleDropdownEntry(this)">
+                                            <option value="Text">Standard Text Base</option>
+                                            <option value="Number">Quantitative Gauge</option>
+                                            <option value="Year">Fiscal Period</option>
+                                            <option value="Dropdown">Selection Mapping</option>
+                                            <option value="Date">Timeline Picker</option>
+                                            <option value="File">Evidence Repository</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mt-2 dropdown-options-container" style="display: none;">
+                                        <div class="p-3 rounded-4 bg-primary bg-opacity-5 border border-dashed border-primary border-opacity-25 mb-2">
+                                            <div class="d-flex align-items-center justify-content-between mb-3 text-start">
+                                                <label class="smaller text-primary fw-800 mb-0">Mapping Option Wizard</label>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <input type="number" class="glass-input py-1 text-center" style="width: 55px;" min="1" onchange="generateOptionRows(this)">
+                                                </div>
+                                            </div>
+                                            <div class="options-wizard-container text-start"></div>
+                                            <input type="hidden" name="Columns[0].DropdownOptions" class="dropdown-input">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="text-secondary smaller fw-bold mb-1 d-block">GUIDANCE NOTE</label>
+                                        <input type="text" name="Columns[0].Description" class="glass-input smaller desc-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-800 shadow-lg border-0">CONSTRUCT DATA ARCHITECTURE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Remaining Modals (EditTable, AddCol, EditCol) using similar patterns -->
+
+@if (tables != null)
+{
+    @foreach (var table in tables)
+    {
+        <div class="modal fade" id="editTableModal-@table.Id" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content premium-modal-glass border-0 shadow-2xl p-4">
+                    <div class="modal-header border-0 pb-2">
+                        <h5 class="fw-800 text-main mb-0">Modify Data Hub Module</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/Coordinator/EditTable" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@table.Id" />
+                        <input type="hidden" name="CriteriaId" value="@Model.Id" />
+                        <div class="modal-body py-4">
+                            <div class="form-floating-custom mb-4">
+                                <label class="text-secondary smaller fw-bold mb-1 d-block">TABLE ID (REF)</label>
+                                <input type="text" name="TableNumber" value="@table.TableNumber" class="glass-input" required>
+                            </div>
+                            <div class="form-floating-custom mb-4">
+                                <label class="text-secondary smaller fw-bold mb-1 d-block">DOMAINE / TITLE</label>
+                                <input type="text" name="Name" value="@table.Name" class="glass-input" required>
+                            </div>
+                            <div class="form-floating-custom">
+                                <label class="text-secondary smaller fw-bold mb-1 d-block">MANUAL CONTEXT</label>
+                                <textarea name="Description" class="glass-input" style="height: 100px">@table.Description</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-800 shadow-lg border-0">SAVE SPECIFICATIONS</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addColumnModal-@table.Id" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content premium-modal-glass border-0 shadow-2xl p-4">
+                    <div class="modal-header border-0 pb-2">
+                        <h5 class="fw-800 text-main mb-0"><i class="bi bi-stack me-2 text-primary"></i>Append Header Field</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form asp-action="AddColumn" method="post">
+                        <input type="hidden" name="TableId" value="@table.Id" />
+                        <input type="hidden" name="criteriaId" value="@Model.Id" />
+                        <div class="modal-body py-4">
+                            <div class="form-floating-custom mb-3">
+                                <label class="text-secondary smaller fw-bold mb-1 d-block">LABEL</label>
+                                <input type="text" name="HeaderName" class="glass-input" required>
+                            </div>
+                            <div class="form-floating-custom mb-4">
+                                <label class="text-secondary smaller fw-bold mb-1 d-block">GUIDANCE</label>
+                                <input type="text" name="Description" class="glass-input">
+                            </div>
+                            
+                            <div class="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-5 mb-4">
+                                <h6 class="smaller fw-800 text-primary text-uppercase ls-1 mb-3">Visibility Blueprint</h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <select name="DependsOnColumnId" class="glass-input py-1 smaller shadow-none">
+                                            <option value="">(None)</option>
+                                             @foreach (var exc in table.Columns.Where(c => c.DataType == "Dropdown"))
+                                             {
+                                                 <option value="@exc.Id">Trigger: @exc.HeaderName</option>
+                                             }
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" name="DependsOnValue" class="glass-input py-1 smaller" placeholder="Required Value...">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-9">
+                                    <label class="text-secondary smaller fw-bold mb-1 d-block">ENGINE</label>
+                                    <select name="DataType" class="glass-input" onchange="toggleDropdownEntry(this)">
+                                        <option value="Text">Standard Text</option>
+                                        <option value="Number">Quantitative</option>
+                                        <option value="Year">Financial Year</option>
+                                        <option value="Dropdown">Pre-set Path</option>
+                                        <option value="Date">Timeline</option>
+                                        <option value="File">Evidence</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-secondary smaller fw-bold mb-1 d-block">INDEX</label>
+                                    <input type="number" name="Order" value="@(table.Columns.Count() + 1)" class="glass-input">
+                                </div>
+                                
+                                <div class="col-12 mt-3 dropdown-options-container" style="display: none;">
+                                    <div class="p-3 bg-primary bg-opacity-5 rounded-4 border border-dashed border-primary border-opacity-25 pb-4">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <label class="smaller text-primary fw-800 mb-0">Spec Options</label>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="number" class="glass-input py-1 text-center" style="width: 50px;" min="1" onchange="generateOptionRows(this)">
+                                            </div>
+                                        </div>
+                                        <div class="options-wizard-container"></div>
+                                        <input type="hidden" name="DropdownOptions" class="dropdown-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-800 shadow-lg border-0">FINALIZE HEADER</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        @foreach (var col in table.Columns)
+        {
+            <div class="modal fade" id="editColModal-@col.Id" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content premium-modal-glass border-0 shadow-2xl p-4">
+                        <div class="modal-header border-0 pb-2">
+                            <h5 class="fw-800 text-main mb-0">Refine Spec Component</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form asp-action="EditColumn" method="post">
+                            <input type="hidden" name="Id" value="@col.Id" />
+                            <input type="hidden" name="TableId" value="@col.TableId" />
+                            <div class="modal-body py-4">
+                                <div class="form-floating-custom mb-3">
+                                    <label class="text-secondary smaller fw-bold mb-1 d-block">COMPONENT LABEL</label>
+                                    <input type="text" name="HeaderName" value="@col.HeaderName" class="glass-input" required>
+                                </div>
+                                <div class="form-floating-custom mb-4">
+                                    <label class="text-secondary smaller fw-bold mb-1 d-block">HINT / GUIDANCE</label>
+                                    <input type="text" name="Description" value="@col.Description" class="glass-input">
+                                </div>
+                                
+                                <div class="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-5 mb-4">
+                                    <h6 class="smaller fw-800 text-primary text-uppercase ls-1 mb-3">Logic Blueprint</h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <select name="DependsOnColumnId" class="glass-input py-1 smaller shadow-none">
+                                                <option value="">(None)</option>
+                                                 @foreach (var exc in table.Columns.Where(c => c.DataType == "Dropdown" && c.Id != col.Id))
+                                                 {
+                                                     <option value="@exc.Id" selected="@(col.DependsOnColumnId == exc.Id)">If @exc.HeaderName matches...</option>
+                                                 }
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" name="DependsOnValue" value="@col.DependsOnValue" class="glass-input py-1 smaller" placeholder="Value...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-9">
+                                        <label class="text-secondary smaller fw-bold mb-1 d-block">DATA ENGINE</label>
+                                        <select name="DataType" class="glass-input" onchange="toggleDropdownEntry(this)">
+                                            <option value="Text" selected="@(col.DataType == "Text")">Alpha-numeric</option>
+                                            <option value="Number" selected="@(col.DataType == "Number")">Quantitative</option>
+                                            <option value="Year" selected="@(col.DataType == "Year")">Fiscal Period</option>
+                                            <option value="Dropdown" selected="@(col.DataType == "Dropdown")">Selection Mapping</option>
+                                            <option value="Date" selected="@(col.DataType == "Date")">Point Event</option>
+                                            <option value="File" selected="@(col.DataType == "File")">Evidence Upload</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="text-secondary smaller fw-bold mb-1 d-block">INDEX</label>
+                                        <input type="number" name="Order" value="@col.Order" class="glass-input">
+                                    </div>
+                                    
+                                    <div class="col-12 mt-3 dropdown-options-container" style="@(col.DataType == "Dropdown" ? "" : "display: none;")">
+                                        <div class="p-3 bg-primary bg-opacity-5 rounded-4 border border-dashed border-primary border-opacity-25 shadow-none">
+                                            <label class="smaller text-primary fw-800 mb-2 d-block">Refine Selection Path (CSV)</label>
+                                            <input type="text" name="DropdownOptions" value="@col.DropdownOptions" class="glass-input py-2 dropdown-input" placeholder="Value A, Value B...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="submit" class="btn btn-primary rounded-pill w-100 py-3 fw-800 shadow-lg border-0">UPDATE SPECIFICATION</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
+
+<style>
+    :root {
+        --text-main: #020617;
+        --text-secondary: #64748b;
+        --glass-bg: rgba(255, 255, 255, 0.6);
+        --glass-border: rgba(0, 0, 0, 0.08);
+        --accent-primary: #6366f1;
+        --accent-secondary: #a855f7;
+    }
+
+    [data-theme="dark"] {
+        --text-main: #f8fafc;
+        --text-secondary: #94a3b8;
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .text-main { color: var(--text-main) !important; }
+    .text-secondary { color: var(--text-secondary) !important; }
+
+    .fw-800 { font-weight: 800; }
+    .ls-1 { letter-spacing: 1px; }
+    .tracking-tight { letter-spacing: -1px; }
+    .text-gradient-primary {
+        background: linear-gradient(135deg, var(--text-main) 30%, #6366f1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .btn-back-glass {
+        width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+        background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px;
+        color: white; text-decoration: none; transition: all 0.2s;
+    }
+    .btn-back-glass:hover { transform: translateX(-4px); background: rgba(255,255,255,0.1); color: var(--accent-primary); }
+
+    .premium-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        overflow: hidden;
+    }
+
+    .crit-indicator {
+        width: 54px; height: 54px;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 16px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        flex-shrink: 0; box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.4);
+    }
+    .crit-indicator.small-ref { width: 50px; height: 50px; }
+    .crit-indicator .num { color: white; font-size: 1.2rem; font-weight: 800; line-height: 1; }
+    .crit-indicator .tag { color: white; font-size: 0.55rem; font-weight: 800; opacity: 0.6; text-uppercase; margin-top: 1px; }
+
+    .btn-action-glass {
+        width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--glass-border);
+        background: transparent; display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-action-glass:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.1); }
+
+    .btn-icon-mini { background: none; border: none; padding: 4px; color: rgba(255,255,255,0.4); transition: all 0.2s; }
+    .btn-icon-mini:hover { color: white; transform: scale(1.2); }
+
+    .table-glass-studio { border-collapse: separate; border-spacing: 0; }
+    .table-glass-studio thead th { border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; }
+    .table-glass-studio tbody tr { border-bottom: 1px solid var(--glass-border); }
+    .table-glass-studio tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    .badge-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--glass-border);
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        display: inline-flex; align-items: center;
+    }
+
+    /* Sidebar Specs */
+    .bg-gradient-sidebar { background: linear-gradient(165deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0) 100%); }
+    .stat-icon-large { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .glow-orb {
+        position: absolute; top: -10%; right: -10%; width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .relative-content { position: relative; z-index: 2; }
+
+    .btn-portal-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        transition: all 0.3s;
+        text-decoration: none;
+        text-align: center;
+    }
+    .btn-portal-glass:hover { background: rgba(255, 255, 255, 0.1); border-color: white; }
+
+    .glass-info-item {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 16px 20px;
+        display: flex; align-items: center; gap: 16px;
+    }
+    .icon-box { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; }
+
+    .btn-premium-glow {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        color: white;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+        transition: all 0.3s;
+    }
+    .btn-premium-glow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
+        color: white;
+    }
+
+    .glass-input {
+        width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border); border-radius: 14px; color: var(--text-main);
+        transition: all 0.2s;
+    }
+    [data-theme="dark"] .glass-input { background: rgba(255, 255, 255, 0.03); }
+    .glass-input:focus { background: rgba(255, 255, 255, 0.1); border-color: var(--accent-primary); outline: none; }
+
+    .premium-modal-glass {
+        background: var(--bg-main, #fff);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 28px !important;
+    }
+    [data-theme="dark"] .premium-modal-glass { background: rgba(15, 23, 42, 0.95); }
+
+    /* Animations */
+    .stagger-item {
+        opacity: 0; transform: translateY(20px);
+        animation: staggerFadeIn 0.6s ease forwards;
+        animation-delay: calc(var(--item-index) * 0.12s);
+    }
+    @@keyframes staggerFadeIn { to { opacity: 1; transform: translateY(0); } }
+    
+    .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.2) !important; }
+</style>
+
+@section Scripts {
+    <script>
+        let colCount = 1;
+
+        function toggleDropdownEntry(select) {
+            const container = $(select).closest('.row, .modal-body').find('.dropdown-options-container');
+            if (select.value === 'Dropdown') {
+                container.slideDown(300);
+            } else {
+                container.slideUp(200);
+            }
+        }
+
+        function generateOptionRows(input) {
+            const count = parseInt(input.value);
+            const container = $(input).closest('.dropdown-options-container').find('.options-wizard-container');
+            
+            container.empty();
+            if (isNaN(count) || count <= 0) return;
+
+            for (let i = 0; i < count; i++) {
+                const rowHtml = `
+                    <div class="option-setup-row mb-3 p-3 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-5 shadow-sm animate-fade-in">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <span class="badge bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 24px; height: 24px; font-size: 0.7rem;">${i+1}</span>
+                            <input type="text" class="glass-input py-2 shadow-sm option-name-input" 
+                                   placeholder="Option (e.g. Govt.)" oninput="syncDropdownValue(this)">
+                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold smaller border-0" onclick="addNestedHeader(this)">
+                                <i class="bi bi-plus me-1"></i>Sub-Field
+                            </button>
+                        </div>
+                        <div class="nested-headers-container ps-4 border-start border-white border-opacity-10 ms-2 mt-3 d-flex flex-column gap-2"></div>
+                    </div>
+                `;
+                container.append(rowHtml);
+            }
+        }
+
+        function addNestedHeader(btn) {
+            const container = $(btn).closest('.option-setup-row').find('.nested-headers-container');
+            const colRow = $(btn).closest('.column-entry-row');
+            const colIdx = colRow.index();
+            const subIdx = container.find('.nested-header-row').length;
+            
+            const nestedHtml = `
+                <div class="nested-header-row d-flex gap-2 animate-fade-in align-items-center bg-white bg-opacity-5 p-2 rounded-3">
+                    <i class="bi bi-arrow-return-right text-primary opacity-50 ms-1"></i>
+                    <input type="text" name="Columns[${colIdx}].SubColumns[${subIdx}].HeaderName" 
+                           class="glass-input py-1 smaller flex-grow-1 sub-header-input" 
+                           placeholder="Field Label">
+                    <select name="Columns[${colIdx}].SubColumns[${subIdx}].DataType" class="glass-input py-1 smaller" style="width: 90px;">
+                        <option value="Text">Text</option>
+                        <option value="Number">Number</option>
+                        <option value="File">File</option>
+                    </select>
+                    <input type="hidden" name="Columns[${colIdx}].SubColumns[${subIdx}].DependsOnValue" value="${$(btn).closest('.option-setup-row').find('.option-name-input').val()}">
+                    <button type="button" class="btn btn-link text-danger p-0 ms-1 shadow-none" onclick="$(this).parent().remove(); reIndexColumns();">
+                        <i class="bi bi-dash-circle-fill"></i>
+                    </button>
+                </div>
+            `;
+            container.append(nestedHtml);
+            reIndexColumns();
+        }
+
+        function syncDropdownValue(input) {
+            const container = $(input).closest('.dropdown-options-container');
+            const optionValue = $(input).val();
+            $(input).closest('.option-setup-row').find('input[name*="DependsOnValue"]').val(optionValue);
+            const allOptions = container.find('.option-name-input').map(function() { return $(this).val(); }).get();
+            container.find('.dropdown-input').val(allOptions.join(', '));
+        }
+
+        function addColumnRow() {
+            const container = document.getElementById('initialColumnsContainer');
+            const rowId = `col-row-${Date.now()}`;
+            const newRow = document.createElement('div');
+            newRow.id = rowId;
+            newRow.className = 'column-entry-row mb-4 p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-5 animate-fade-in position-relative';
+            newRow.innerHTML = `
+                <button type="button" class="btn btn-sm text-danger position-absolute top-0 end-0 mt-2 me-2 shadow-none" onclick="removeColumnRow('${rowId}')">
+                    <i class="bi bi-x-circle-fill fs-5"></i>
+                </button>
+                <div class="row g-4 px-2">
+                    <div class="col-md-7">
+                        <label class="smaller text-secondary mb-1 d-block fw-bold font-outfit">FIELD LABEL</label>
+                        <input type="text" name="Columns[${colCount}].HeaderName" class="glass-input header-name-input" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="smaller text-secondary mb-1 d-block fw-bold font-outfit">ENGINE TYPE</label>
+                        <select name="Columns[${colCount}].DataType" class="glass-input data-type-input" onchange="toggleDropdownEntry(this)">
+                            <option value="Text">Standard Text Base</option>
+                            <option value="Number">Quantitative Gauge</option>
+                            <option value="Year">Fiscal Period</option>
+                            <option value="Dropdown">Selection List</option>
+                            <option value="Date">Timeline Picker</option>
+                            <option value="File">Evidence Documentation</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-2 dropdown-options-container" style="display: none;">
+                        <div class="p-3 bg-primary bg-opacity-5 rounded-4 border border-dashed border-primary border-opacity-25 mb-2">
+                             <div class="d-flex align-items-center justify-content-between mb-3 text-start">
+                                <label class="smaller text-primary fw-800 mb-0">Construct Path Wizard</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="number" class="glass-input py-1 text-center" style="width: 50px;" min="1" onchange="generateOptionRows(this)">
+                                </div>
+                            </div>
+                            <div class="options-wizard-container text-start"></div>
+                            <input type="hidden" name="Columns[${colCount}].DropdownOptions" class="dropdown-input">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newRow);
+            colCount++;
+            reIndexColumns();
+        }
+
+        function removeColumnRow(rowId) {
+            $(`#${rowId}`).fadeOut(200, function() { $(this).remove(); reIndexColumns(); });
+        }
+
+        function reIndexColumns() {
+            const rows = document.querySelectorAll('.column-entry-row');
+            rows.forEach((row, index) => {
+                const nameInput = row.querySelector('.header-name-input');
+                const typeInput = row.querySelector('.data-type-input');
+                const dropdownInput = row.querySelector('.dropdown-input');
+                const descInput = row.querySelector('.desc-input');
+                
+                if (nameInput) nameInput.name = `Columns[${index}].HeaderName`;
+                if (typeInput) typeInput.name = `Columns[${index}].DataType`;
+                if (dropdownInput) dropdownInput.name = `Columns[${index}].DropdownOptions`;
+                if (descInput) descInput.name = `Columns[${index}].Description`;
+
+                const subHeaderRows = row.querySelectorAll('.nested-header-row');
+                subHeaderRows.forEach((subRow, subIndex) => {
+                    const subNameInput = subRow.querySelector('.sub-header-input');
+                    const subTypeInput = subRow.querySelector('select');
+                    const subDepInput = subRow.querySelector('input[name*="DependsOnValue"]');
+                    if (subNameInput) subNameInput.name = `Columns[${index}].SubColumns[${subIndex}].HeaderName`;
+                    if (subTypeInput) subTypeInput.name = `Columns[${index}].SubColumns[${subIndex}].DataType`;
+                    if (subDepInput) subDepInput.name = `Columns[${index}].SubColumns[${subIndex}].DependsOnValue`;
+                });
+            });
+            colCount = rows.length;
+        }
+    </script>
+}

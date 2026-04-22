@@ -1,0 +1,79 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Evidence Repository";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Evidence Repository</h2>
+            <p class="text-secondary small">Centralized storage for all uploaded documentation and metrics</p>
+        </div>
+        
+        <div class="glass-panel px-3 py-2 d-flex align-items-center gap-2 border-0 shadow-sm">
+            <i class="bi bi-file-earmark-zip text-primary fs-5"></i>
+            <span class="smaller fw-bold">Archive Download (Beta)</span>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var record in Model)
+            {
+                 var rowData = new Dictionary<string, string>();
+                 try { rowData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(record.JsonData) ?? new Dictionary<string, string>(); } catch { }
+                 
+                 @foreach (var entry in (rowData ?? new Dictionary<string, string>()).Where(e => !string.IsNullOrEmpty(e.Value) && 
+                     (e.Value.ToLower().EndsWith(".pdf") || 
+                      e.Value.ToLower().EndsWith(".jpg") || 
+                      e.Value.ToLower().EndsWith(".jpeg") || 
+                      e.Value.ToLower().EndsWith(".png") ||
+                      e.Value.ToLower().EndsWith(".docx") ||
+                      e.Value.ToLower().EndsWith(".xlsx"))))
+                 {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="glass-panel p-4 h-100 border-0 shadow-sm hover-up transition-300">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                                    <i class="bi @(entry.Value.ToLower().EndsWith(".pdf") ? "bi-file-earmark-pdf" : "bi-file-earmark-image") fs-4"></i>
+                                </div>
+                                <span class="smaller text-secondary">@record.AcademicYear</span>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-1 text-truncate" title="@record.Table?.Name">@record.Table?.Name</h6>
+                            <p class="smaller text-secondary mb-3">Field: @entry.Key</p>
+                            
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top border-secondary border-opacity-10">
+                                <span class="badge @(record.Status == "Verified" ? "bg-success" : "bg-primary") bg-opacity-10 @(record.Status == "Verified" ? "text-success" : "text-primary") smaller">@record.Status</span>
+                                <a href="#" class="btn btn-sm text-primary p-0 fw-bold smaller">
+                                    <i class="bi bi-download me-1"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                 }
+            }
+        </div>
+    }
+    else
+    {
+        <div class="glass-panel p-5 text-center shadow-sm">
+            <div class="opacity-25 mb-3"><i class="bi bi-file-earmark-break fs-1"></i></div>
+            <h5 class="text-secondary">No evidence documents found</h5>
+            <p class="smaller text-muted">Upload support files during data entry to see them here.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

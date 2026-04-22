@@ -1,0 +1,211 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Pending Approvals";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Verification Hub</h2>
+            <p class="text-secondary small">Review and validate faculty documentation submissions</p>
+        </div>
+        
+        <div class="badge bg-warning bg-opacity-10 text-warning p-2 px-4 border border-warning border-opacity-25 rounded-pill fw-bold">
+            <i class="bi bi-clock-history me-2"></i> @(Model?.Count() ?? 0) Pending Reviews
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var record in Model)
+            {
+                var rowData = new Dictionary<string, string>();
+                try { rowData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(record.JsonData ?? "{}") ?? new Dictionary<string, string>(); } catch { }
+
+                <div class="col-12" id="record-card-@record.Id">
+                    <div class="glass-panel p-0 overflow-hidden border-0 shadow-lg mb-4 animate-fade-in">
+                        <div class="p-3 px-4 bg-primary bg-opacity-10 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-10">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-sm bg-primary text-white d-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                    @(string.IsNullOrEmpty(record.Faculty?.FullName) ? "F" : record.Faculty.FullName.Substring(0, 1).ToUpper())
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0">@(record.Faculty?.FullName ?? "Unknown Faculty")</h6>
+                                    <span class="smaller text-secondary">Submitted on @record.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary bg-opacity-10 text-primary mb-0">Table @(record.Table?.TableNumber ?? "N/A")</span>
+                                <div class="smaller fw-bold text-dark mt-1">@(record.Table?.Criteria?.Number ?? "C"): @(record.Table?.Name ?? "No Name")</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                             <div class="row g-3">
+                                @foreach (var entry in rowData)
+                                {
+                                    <div class="col-md-4 col-lg-3">
+                                        <div class="smaller text-secondary text-uppercase fw-bold ls-1 mb-1">@entry.Key</div>
+                                        <div class="small fw-medium text-truncate" title="@entry.Value">
+                                            @if (!string.IsNullOrEmpty(entry.Value) && (entry.Value.EndsWith(".pdf") || entry.Value.EndsWith(".jpg") || entry.Value.EndsWith(".png")))
+                                            {
+                                                <a href="#" class="text-primary text-decoration-none">
+                                                    <i class="bi bi-file-earmark-pdf me-1"></i> View Document
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                @entry.Value
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                <div class="col-md-4 col-lg-3">
+                                    <div class="smaller text-secondary text-uppercase fw-bold ls-1 mb-1">Academic Year</div>
+                                    <div class="small fw-bold text-primary">@record.AcademicYear</div>
+                                </div>
+                             </div>
+
+                             <div class="mt-4 pt-3 border-top border-secondary border-opacity-10 d-flex justify-content-end gap-3">
+                                 <button class="btn btn-outline-danger btn-sm px-4 rounded-pill fw-bold" onclick="showRejectModal(@record.Id)">
+                                     <i class="bi bi-x-lg me-2"></i> Reject
+                                 </button>
+                                 <button class="btn btn-premium-primary btn-sm px-4 rounded-pill fw-bold" onclick="verifyRecord(@record.Id)">
+                                     <i class="bi bi-check-lg me-2"></i> Approve & Verify
+                                 </button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="glass-panel p-5 text-center">
+            <div class="opacity-25 mb-3"><i class="bi bi-check-all fs-1"></i></div>
+            <h5 class="text-secondary">No pending approvals</h5>
+            <p class="smaller text-muted">You are all caught up! All submitted data has been processed.</p>
+        </div>
+    }
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-danger bg-opacity-10 border-0 p-4">
+                <h5 class="modal-title fw-bold text-danger">Rejection Remarks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="rejectRecordId" />
+                <label class="smaller fw-bold text-uppercase text-secondary mb-2">Identify the Issues</label>
+                <textarea id="rejectionRemarks" class="form-control glass-input border-0" rows="4" placeholder="Briefly explain why this submission is being rejected..."></textarea>
+                <div class="smaller text-muted mt-3">
+                    <i class="bi bi-info-circle me-1"></i> This feedback will be visible to the faculty for corrections.
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="confirmReject()">Submit Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function verifyRecord(id) {
+            Swal.fire({
+                title: 'Confirm Approval',
+                text: "Are you sure you want to verify this data record?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#1d72fe',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Approve it!',
+                background: 'var(--glass-bg)',
+                color: 'var(--text-primary)'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("VerifyRecord", "HOD")',
+                        type: 'POST',
+                        data: { id: id },
+                        success: function(response) {
+                            if(response.success) {
+                                $(`#record-card-${id}`).fadeOut(300);
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Verified!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function showRejectModal(id) {
+            $('#rejectRecordId').val(id);
+            $('#rejectionRemarks').val('');
+            $('#rejectModal').modal('show');
+        }
+
+        function confirmReject() {
+            let id = $('#rejectRecordId').val();
+            let remarks = $('#rejectionRemarks').val();
+
+            if(!remarks) {
+                Swal.fire('Required', 'Please provide rejection remarks.', 'warning');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("RejectRecord", "HOD")',
+                type: 'POST',
+                data: { id: id, remarks: remarks },
+                success: function(response) {
+                    if(response.success) {
+                        $('#rejectModal').modal('hide');
+                        $(`#record-card-${id}`).fadeOut(300);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Rejected',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                }
+            });
+        }
+    </script>
+}
+
+<style>
+    .ls-1 { letter-spacing: 0.5px; }
+    .glass-input {
+        background: rgba(0,0,0,0.05);
+        border-radius: 12px;
+        padding: 1rem;
+    }
+    .btn-premium-primary {
+        background: linear-gradient(135deg, #1d72fe 0%, #0056e0 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(29, 114, 254, 0.3);
+        transition: all 0.3s;
+    }
+    .btn-premium-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(29, 114, 254, 0.4);
+        color: white;
+    }
+</style>

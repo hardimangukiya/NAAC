@@ -1,0 +1,506 @@
+@using NAAC.Models
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Executive Overview";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <!-- Top Header: Year Filter & Export -->
+    <div class="d-flex justify-content-end mb-5">
+        <div class="d-flex flex-wrap gap-2">
+            <div class="dropdown">
+                <button class="btn glass-panel border-1 px-4 py-2 dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar3 me-2 text-primary"></i> AY @ViewBag.SelectedYear
+                </button>
+                <ul class="dropdown-menu shadow-lg border-0">
+                    @foreach (var ay in ViewBag.AcademicYears)
+                    {
+                        <li><a class="dropdown-item @(ViewBag.SelectedYear == ay ? "active" : "")" href="?year=@ay">@ay</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. SUMMARY CARDS (4-Card Sequence) -->
+    <div class="row g-4 mb-5 card-stats-row">
+        <!-- Total Users -->
+        <a asp-action="ManageUsers" class="col-sm-6 col-md-3 text-decoration-none">
+            <div class="glass-panel p-4 h-100 stat-card-modern border-primary interactive-card" style="border-left: 4px solid #6366f1 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Total Users</div>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people-fill"></i></div>
+                </div>
+                <div class="h2 fw-800 mb-1">@ViewBag.TotalStaff</div>
+                <div class="smaller text-secondary-dim">Registered in platform</div>
+            </div>
+        </a>
+
+        <!-- Active HODs -->
+        <a asp-action="ManageUsers" asp-route-role="HOD" class="col-sm-6 col-md-3 text-decoration-none">
+            <div class="glass-panel p-4 h-100 stat-card-modern border-success interactive-card" style="border-left: 4px solid #10b981 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Active HODs</div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-person-badge"></i></div>
+                </div>
+                <div class="h2 fw-800 mb-1">@ViewBag.TotalHODs</div>
+                <div class="smaller text-secondary-dim">Department leads</div>
+            </div>
+        </a>
+
+        <!-- Faculty Staff -->
+        <a asp-action="ManageUsers" asp-route-role="Faculty" class="col-sm-6 col-md-3 text-decoration-none">
+            <div class="glass-panel p-4 h-100 stat-card-modern border-warning interactive-card" style="border-left: 4px solid #f59e0b !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Faculty Staff</div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-person-workspace"></i></div>
+                </div>
+                <div class="h2 fw-800 mb-1">@ViewBag.TotalFaculty</div>
+                <div class="smaller text-secondary-dim">Criteria contributors</div>
+            </div>
+        </a>
+
+        <!-- Coordinators -->
+        <a asp-action="ManageUsers" asp-route-role="Coordinator" class="col-sm-6 col-md-3 text-decoration-none">
+            <div class="glass-panel p-4 h-100 stat-card-modern border-danger interactive-card" style="border-left: 4px solid #ef4444 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Coordinators</div>
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-shield-check"></i></div>
+                </div>
+                <div class="h2 fw-800 mb-1">@ViewBag.TotalCoordinators</div>
+                <div class="smaller text-secondary-dim">Portal administrators</div>
+            </div>
+        </a>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- 3. NAAC READINESS CENTER -->
+        <div class="col-lg-4">
+            <div class="glass-panel p-4 h-100 shadow-lg border-0">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">NAAC Readiness Center</h5>
+                    <i class="bi bi-bullseye text-primary"></i>
+                </div>
+                
+                <div class="text-center mb-5">
+                    <div class="readiness-container mb-3 position-relative mx-auto" style="width: 140px;">
+                        <svg viewBox="0 0 36 36" class="circular-chart @(ViewBag.ReadinessScore < 41 ? "red" : ViewBag.ReadinessScore < 71 ? "orange" : "green")">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="@ViewBag.ReadinessScore, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage">@ViewBag.ReadinessScore%</text>
+                        </svg>
+                    </div>
+                    <div class="smaller text-secondary text-uppercase fw-bold ls-1">Overall Department Score</div>
+                </div>
+
+                <!-- Criteria-wise breakdown (Top 3 lowest for immediate focus) -->
+                <div class="mb-4">
+                    <h6 class="smaller fw-bold text-secondary text-uppercase ls-1 mb-3">Attention Needed</h6>
+                    <div class="space-y-3">
+                        @if (ViewBag.CriteriaReadiness != null)
+                        {
+                            @foreach (var crit in ((List<dynamic>)ViewBag.CriteriaReadiness).Take(3))
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between smaller mb-1">
+                                        <span class="fw-bold">Crit-@crit.Number</span>
+                                        <span class="text-secondary">@crit.Readiness%</span>
+                                    </div>
+                                    <div class="progress" style="height: 4px; border-radius: 2px;">
+                                        <div class="progress-bar @(crit.Readiness < 41 ? "bg-danger" : (crit.Readiness < 71 ? "bg-warning" : "bg-success"))" style="width: @crit.Readiness%"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- Suggestions Logic -->
+                <div class="alert bg-primary bg-opacity-10 border-0 rounded-4 p-3 mb-0">
+                    <div class="d-flex gap-2 text-primary">
+                        <i class="bi bi-lightbulb-fill"></i>
+                        <div>
+                            <div class="smaller fw-bold text-uppercase ls-1">Intelligence Advice</div>
+                            <div class="small fw-medium">@ViewBag.ReadinessSuggestion</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. GRAPHS / CHARTS (Bar Chart) -->
+        <div class="col-lg-8">
+            <div class="glass-panel p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Records per Criteria</h5>
+                    <i class="bi bi-bar-chart-line text-secondary"></i>
+                </div>
+                <div style="height: 300px; position: relative;">
+                    @if (ViewBag.CriteriaLabels != null && ViewBag.CriteriaLabels.Length > 0)
+                    {
+                        <canvas id="recordsChart"></canvas>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-secondary">
+                            <i class="bi bi-bar-chart fs-1 mb-2"></i>
+                            <p>No records data available to visualize</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- 4. CRITERIA-WISE PROGRESS & 5. FACULTY TABLE -->
+        <div class="col-xl-8">
+            <div class="glass-panel p-4 p-md-5 mb-4 shadow-sm">
+                <h5 class="fw-bold mb-4">Criterion Progress Summary</h5>
+                <div class="table-responsive">
+                    <table class="table-glass w-100 align-middle mb-0">
+                        <thead>
+                            <tr class="text-secondary smaller fw-bold ls-1 text-uppercase">
+                                <th class="py-3">Criteria Name</th>
+                                <th class="py-3">Assigned To</th>
+                                <th class="py-3" style="width: 200px;">Progress</th>
+                                <th class="py-3 text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.AssignmentsProgress != null)
+                            {
+                                @foreach (var item in ViewBag.AssignmentsProgress)
+                                {
+                                    var ass = (CriteriaAssignment)item.Assignment;
+                                    int progressValue = (int)item.Progress;
+                                    <tr class="border-bottom border-secondary border-opacity-10">
+                                        <td class="py-4">
+                                            <div class="fw-bold text-primary">@ass.Criteria?.Number</div>
+                                            <div class="smaller text-secondary-dim">@ass.Criteria?.Title</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="small fw-medium text-primary-dim">@ass.Faculty?.FullName</div>
+                                            <div class="smaller text-secondary-dim">@ass.Faculty?.Email</div>
+                                        </td>
+                                        <td class="py-4">
+                                            <div class="progress" style="height: 6px; border-radius: 3px; background: rgba(0,0,0,0.08);">
+                                                <div class="progress-bar @(progressValue > 70 ? "bg-success" : (progressValue > 30 ? "bg-warning" : "bg-danger")) shadow-sm" style="width: @progressValue%"></div>
+                                            </div>
+                                            <div class="smaller text-secondary-dim mt-2">@progressValue% complete</div>
+                                        </td>
+                                        <td class="text-end py-4">
+                                            <span class="badge @(progressValue > 70 ? "bg-success" : (progressValue > 30 ? "bg-warning" : "bg-danger")) bg-opacity-10 @(progressValue > 70 ? "text-success" : (progressValue > 30 ? "text-warning" : "text-danger")) p-2 small px-3 rounded-pill">
+                                                @(progressValue > 70 ? "Stable" : (progressValue > 30 ? "Pending" : "Critical"))
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            @if (ViewBag.AssignmentsProgress == null || !((IEnumerable<dynamic>)ViewBag.AssignmentsProgress).Any())
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-secondary">
+                                        No criteria mapped yet. Go to <a asp-action="CriteriaAssignment" class="text-primary fw-bold">Mapping Center</a>.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DATA ISSUES MONITOR -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="glass-panel p-4 border-start border-5 border-danger shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0 text-danger"><i class="bi bi-shield-exclamation me-2"></i>Data Integrity Alerts</h5>
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Action Required</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 border-end border-secondary border-opacity-10">
+                                <div class="smaller fw-bold text-secondary text-uppercase ls-1 mb-2">No Data Entered Criteria</div>
+                                @if (ViewBag.NoDataCriteria != null && ((List<string>)ViewBag.NoDataCriteria).Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var crit in (List<string>)ViewBag.NoDataCriteria)
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">Crit-@crit</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="small text-success"><i class="bi bi-check-all me-1"></i>All criteria have initial data</div>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <div class="smaller fw-bold text-secondary text-uppercase ls-1 mb-2">Incomplete Tables (0 Records)</div>
+                                @if (ViewBag.IncompleteTables != null && ((List<string>)ViewBag.IncompleteTables).Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var table in (List<string>)ViewBag.IncompleteTables)
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Table @table</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="small text-success"><i class="bi bi-check-all me-1"></i>Structure is fully populated</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 border-start border-4 border-danger h-100 shadow-sm transition-hover">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                            <div>
+                                <div class="fw-bold small">@(ViewBag.DataMissingTitle ?? "Data Alert")</div>
+                                <div class="smaller text-secondary">@(ViewBag.DataMissingText ?? "No details available")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 border-start border-4 border-warning h-100 shadow-sm transition-hover">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clock"></i></div>
+                            <div>
+                                <div class="fw-bold small">@(ViewBag.NotUpdatedTitle ?? "Update Check")</div>
+                                <div class="smaller text-secondary">@(ViewBag.NotUpdatedText ?? "Records are up to date")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. RECENT ACTIVITY & 10. QUICK ACTIONS -->
+        <div class="col-xl-4">
+            <div class="glass-panel p-5 mb-4 h-100 shadow-sm">
+                <h5 class="fw-bold mb-4">Recent Activity</h5>
+                <div class="activity-timeline">
+                    @if (ViewBag.RecentActivity != null && ((List<NAAC.Models.ActivityLog>)ViewBag.RecentActivity).Any())
+                    {
+                        @foreach (var log in (List<NAAC.Models.ActivityLog>)ViewBag.RecentActivity)
+                        {
+                            var dotColor = log.Status == "Warning" ? "bg-warning" : log.Status == "Error" ? "bg-danger" : "bg-success";
+                            var iconClass = log.Action.Contains("Verified") || log.Action.Contains("Approved") ? "bi-check-circle-fill text-success" 
+                                         : log.Action.Contains("Rejected") ? "bi-x-circle-fill text-danger" 
+                                         : "bi-activity text-primary";
+                            <div class="d-flex gap-3 mb-4 pb-3 border-bottom border-secondary border-opacity-10">
+                                <div class="flex-shrink-0 mt-1">
+                                    <div class="rounded-circle @dotColor" style="width:10px;height:10px;margin-top:4px;"></div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="small fw-bold mb-0">@log.UserName</div>
+                                    <div class="smaller text-secondary">@log.Action — @log.Module</div>
+                                    <div class="smaller text-secondary opacity-75">@log.Timestamp.ToString("MMM dd, HH:mm")</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 opacity-50">
+                            <i class="bi bi-cloud-slash fs-2 mb-2 d-block"></i>
+                            <span class="small">No recent activity recorded</span>
+                        </div>
+                    }
+                </div>
+
+                <hr class="my-5 border-secondary border-opacity-10">
+                
+                <h5 class="fw-bold mb-4">Quick Actions</h5>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a asp-controller="HOD" asp-action="ManageUsers" asp-route-role="Faculty"
+                           class="btn btn-portal w-100 py-3 text-start small d-flex align-items-center shadow-sm">
+                            <i class="bi bi-people me-2"></i> Faculty
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-controller="HOD" asp-action="CriteriaAssignment"
+                           class="btn btn-portal w-100 py-3 text-start small d-flex align-items-center shadow-sm">
+                            <i class="bi bi-diagram-3 me-2"></i> Map
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-controller="HOD" asp-action="AllRecords"
+                           class="btn btn-portal w-100 py-3 text-start small d-flex align-items-center shadow-sm">
+                            <i class="bi bi-database-check me-2"></i> Data
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a asp-controller="HOD" asp-action="Approvals"
+                           class="btn btn-portal w-100 py-3 text-start small d-flex align-items-center shadow-sm">
+                            <i class="bi bi-check2-circle me-2"></i> Approve
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .interactive-card {
+        cursor: pointer;
+    }
+
+    .stat-card-modern {
+        border-bottom: 4px solid transparent;
+        transition: transform 0.3s, background 0.3s;
+    }
+    .stat-card-modern:hover { 
+        transform: translateY(-5px);
+        background: var(--card-bg);
+    }
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    /* Circular Progress Chart */
+    .stat-card-modern.border-indigo { border-color: #6366f1 !important; }
+    .bg-indigo { background-color: #7c7ef6ff !important; }
+    .text-indigo { color: #6366f1 !important; }
+
+    .readiness-container { width: 100%; max-width: 200px; margin: 0 auto; }
+    .circular-chart { display: block; margin: 10px auto; max-width: 100%; max-height: 250px; }
+    .circle-bg { fill: none; stroke: var(--glass-border); stroke-width: 2.8; }
+    .circle { fill: none; stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 1s ease-out; }
+    
+    .circular-chart.green .circle { stroke: #22c55e; }
+    .circular-chart.orange .circle { stroke: #eab308; }
+    .circular-chart.red .circle { stroke: #ef4444; }
+
+    .percentage { fill: var(--text-primary); font-family: sans-serif; font-size: 0.5em; text-anchor: middle; font-weight: 800; }
+    
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); }
+    .ls-1 { letter-spacing: 1px; }
+    .smaller { font-size: 0.75rem; }
+
+    /* Dark Mode Filter Visibility */
+    [data-theme="dark"] .dropdown .btn.glass-panel {
+        color: #f8fafc !important;
+        border-color: rgba(255,255,255,0.2) !important;
+    }
+    
+    [data-theme="dark"] .dropdown-menu {
+        background: #1e293b !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+    
+    [data-theme="dark"] .dropdown-item {
+        color: #f8fafc !important;
+    }
+    
+    [data-theme="dark"] .dropdown-item:hover {
+        background: rgba(99, 102, 241, 0.2) !important;
+    }
+
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.7; }
+    .text-primary-dim { color: var(--text-primary); }
+    [data-theme="dark"] .text-secondary-dim { color: #94a3b8; }
+    [data-theme="dark"] .text-primary-dim { color: #f1f5f9; }
+    
+    .table-glass {
+        border-collapse: separate;
+        border-spacing: 0;
+        background: transparent !important;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('recordsChart').getContext('2d');
+            
+            // Dynamic Data from Backend
+            const labels = @Html.Raw(Json.Serialize(ViewBag.CriteriaLabels));
+            const values = @Html.Raw(Json.Serialize(ViewBag.CriteriaValues));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Records Entered',
+                        data: values,
+                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        borderColor: '#6366f1',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        hoverBackgroundColor: 'rgba(99, 102, 241, 0.7)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e1e2d',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            borderRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(255,255,255,0.05)', borderDash: [5, 5] },
+                            ticks: { color: '#888' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { 
+                                color: '#888',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
+
+@functions {
+    public string GetDotColor(string action)
+    {
+        return action.ToLower() switch
+        {
+            var a when a.Contains("added") || a.Contains("created") => "bg-success",
+            var a when a.Contains("updated") || a.Contains("edited") => "bg-primary",
+            var a when a.Contains("deleted") => "bg-danger",
+            _ => "bg-warning"
+        };
+    }
+
+    public string GetRelativeTime(DateTime date)
+    {
+        var ts = DateTime.Now - date;
+        if (ts.TotalMinutes < 1) return "Just now";
+        if (ts.TotalMinutes < 60) return $"{(int)ts.TotalMinutes}m ago";
+        if (ts.TotalHours < 24) return $"{(int)ts.TotalHours}h ago";
+        if (ts.TotalDays < 7) return $"{(int)ts.TotalDays}d ago";
+        return date.ToString("MMM dd, yyyy");
+    }
+}

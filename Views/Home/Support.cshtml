@@ -1,0 +1,247 @@
+@{
+    ViewData["Title"] = "Support Center";
+}
+
+<section class="auth-container">
+    <div class="container px-4">
+        <!-- Hero Section -->
+        <div class="text-center mb-5 animate-fade-in">
+            <i class="bi bi-headset text-primary" style="font-size: 3.5rem;"></i>
+            <h1 class="hero-title mt-3">Support Center</h1>
+            <p class="hero-subtitle">We're here to help you manage your NAAC accreditation smoothly.</p>
+        </div>
+
+        <div class="row g-4 mb-5 animate-fade-in delay-1">
+            <!-- Contact Card 1 -->
+            <div class="col-md-4">
+                <div class="glass-panel support-card">
+                    <i class="bi bi-envelope-paper"></i>
+                    <h4>Email Support</h4>
+                    <p class="text-secondary fw-bold">naachod123@gmail.com</p>
+                </div>
+            </div>
+            <!-- Contact Card 2 -->
+            <div class="col-md-4">
+                <div class="glass-panel support-card">
+                    <i class="bi bi-phone-vibrate"></i>
+                    <h4>Contact Number</h4>
+                    <p class="text-secondary fw-bold">+91-395004 395004</p>
+                </div>
+            </div>
+            <!-- Contact Card 3 -->
+            <div class="col-md-4">
+                <div class="glass-panel support-card">
+                    <i class="bi bi-clock-history"></i>
+                    <h4>Support Hours</h4>
+                    <p class="text-secondary">Mon – Fri: 10:00 AM – 5:00 PM</p>
+                    <small class="text-danger fw-medium">Closed on weekends</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5 animate-fade-in delay-2">
+            <div class="col-lg-6">
+                <div class="glass-panel p-4 h-100">
+                    <h3 class="mb-4 text-primary d-flex align-items-center">
+                        <i class="bi bi-person-workspace me-2"></i> Support For:
+                    </h3>
+                    <ul class="list-unstyled text-secondary d-grid gap-3">
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Login or account issues</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Data entry or upload problems</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Report generation issues</li>
+                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Technical errors or bugs</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="glass-panel p-4 h-100 border-start border-4 border-warning">
+                    <h3 class="mb-4 text-warning d-flex align-items-center">
+                        <i class="bi bi-sticky me-2"></i> Important Note
+                    </h3>
+                    <p class="text-secondary">Please provide the following details while contacting support for faster resolution:</p>
+                    <ul class="list-unstyled text-secondary d-grid gap-2">
+                        <li><strong>1.</strong> Your Name</li>
+                        <li><strong>2.</strong> Role (HOD/Admin/Faculty/Coordinator)</li>
+                        <li><strong>3.</strong> Description of the issue</li>
+                        <li><strong>4.</strong> Screenshot (if possible)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="glass-panel p-5 animate-fade-in delay-3">
+            <div class="row mb-5 align-items-center">
+                <div class="col-md-6">
+                    <h2 class="mb-2">Frequently Asked Questions</h2>
+                    <p class="text-secondary mb-0">Quick answers to common questions about the NAAC system.</p>
+                </div>
+                <div class="col-md-6 mt-3 mt-md-0">
+                    <div class="faq-search-wrapper position-relative">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="faqSearch" class="form-control-custom w-100" placeholder="Search FAQs..." />
+                    </div>
+                </div>
+            </div>
+
+            <div id="faqAccordion">
+                <!-- FAQ 1 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>How do I register in the system?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Only the HOD (Head of Department) can register in the system. After registration, the HOD can create accounts for Admin, Faculty, and NAAC Coordinator.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 2 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>I forgot my password. What should I do?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Click on the “Forgot Password” option on the login page and follow the instructions to reset your password using your registered email.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 3 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Can faculty register themselves?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            No, faculty members cannot register themselves. Their accounts are created by the HOD.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 4 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>How is NAAC criteria assigned?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            The HOD assigns each faculty member to a specific NAAC criterion. A faculty member can manage only the assigned criterion.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 5 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Who can upload data and documents?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            <strong>Admin:</strong> Uploads student-related data (scholarships, freeship, etc.)<br/>
+                            <strong>Faculty:</strong> Uploads data related to their assigned criteria.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 6 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Who can view all the data?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            HOD and NAAC Coordinator can view all records across all criteria. Faculty can only view their assigned criteria data.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 7 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>What does the NAAC Coordinator do?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            The NAAC Coordinator can: View faculty and their assigned criteria, View all uploaded records, and add new criteria or tables.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 8 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Can I download reports?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Yes, the HOD can download data and reports in Excel or PDF format.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 9 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Is my data secure?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Yes, the system uses secure authentication and role-based access to ensure that your data is protected and only accessible to authorized users.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 10 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Can I edit or delete uploaded data?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Yes, users can edit or delete the data they have uploaded, depending on their role and permissions.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 11 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Why am I not receiving OTP during registration?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            Please check: Your email address is correct, Spam/Junk folder. If the issue persists, contact support.
+                        </div>
+                    </div>
+                </div>
+                <!-- FAQ 12 -->
+                <div class="faq-accordion-item">
+                    <button class="faq-header">
+                        <span>Who should I contact for technical issues?</span>
+                        <i class="bi bi-plus fs-4"></i>
+                    </button>
+                    <div class="faq-body">
+                        <div class="faq-body-content">
+                            You can contact the support team via email or phone as mentioned in the Support section.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- No Results Message -->
+            <div id="noResults" class="text-center py-5" style="display:none;">
+                <i class="bi bi-search fs-1 text-secondary mb-3 d-block"></i>
+                <h4 class="text-secondary">No matching FAQs found</h4>
+                <p class="text-secondary small">Try searching for simpler terms like "Password" or "Role".</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+}
+

@@ -1,0 +1,29 @@
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Critical Gaps";
+}
+
+<div class="animate-fade-in p-2">
+    <div class="mb-5">
+        <h2 class="fw-800 mb-0">Alerts & Gaps</h2>
+        <p class="text-secondary small">Identification of missing documentation and data records</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="glass-panel p-4 border-start border-4 border-danger">
+                <h6 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>Critical Missing Documents</h6>
+                <div class="alert bg-danger bg-opacity-5 border-0 p-3 mb-2">
+                    <div class="small fw-bold text-danger">Table 6.1.1 PDF Missing</div>
+                    <div class="smaller text-secondary">The AQAR supporting document for Research Policy is required.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-panel p-4 border-start border-4 border-warning h-100">
+                <h6 class="fw-bold text-warning mb-3"><i class="bi bi-clock-history me-2"></i>Pending Validations</h6>
+                <p class="text-secondary small">Currently no pending validations for the selected academic year.</p>
+            </div>
+        </div>
+    </div>
+</div>

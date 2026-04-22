@@ -1,0 +1,173 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "System Overview";
+}
+
+<div class="animate-fade-in">
+    <!-- Admin Statistics Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <a asp-action="ManageUsers" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left: 4px solid #4f46e5 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold ls-1">Total Users</div>
+                        <i class="bi bi-people text-primary fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.TotalUsers</div>
+                    <div class="small text-secondary">Registered in platform</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="ManageUsers" asp-route-role="HOD" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left: 4px solid #22c55e !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold ls-1">Active HODs</div>
+                        <i class="bi bi-person-badge text-success fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.TotalHODs</div>
+                    <div class="small text-secondary">Department leads</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="ManageUsers" asp-route-role="Faculty" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left: 4px solid #eab308 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold ls-1">Faculty Staff</div>
+                        <i class="bi bi-person-workspace text-warning fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.TotalFaculty</div>
+                    <div class="small text-secondary">Criteria contributors</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-action="ManageUsers" asp-route-role="Admin" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left: 4px solid #f43f5e !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold ls-1">Administrators</div>
+                        <i class="bi bi-shield-lock text-danger fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.TotalAdmins</div>
+                    <div class="small text-secondary">Core system access</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- System Management Grid -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="glass-panel p-5 h-100 shadow-lg border-0">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0 fw-800">System Activity Snapshot</h3>
+                    <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill smaller fw-bold ls-1">REAL-TIME FEED</div>
+                </div>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="glass-panel p-4 h-100 border-0 shadow-sm status-glass-card" style="background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.15) !important;">
+                            <div class="d-flex gap-3">
+                                <div class="stat-icon bg-primary bg-opacity-20 text-primary" style="width: 42px; height: 42px; border-radius: 12px;">
+                                    <i class="bi bi-shield-check fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-main">Platform Status</div>
+                                    <div class="small text-secondary-dim mt-1">Institutional portal synchronized. System Health: <span class="text-primary fw-800">@ViewBag.SystemHealth</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="glass-panel p-4 h-100 border-0 shadow-sm status-glass-card" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15) !important;">
+                            <div class="d-flex gap-3">
+                                <div class="stat-icon bg-success bg-opacity-20 text-success" style="width: 42px; height: 42px; border-radius: 12px;">
+                                    <i class="bi bi-activity fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-main">Network Pulse</div>
+                                    <div class="small text-secondary-dim mt-1"><span class="text-success fw-800">@ViewBag.RecentActivityCount</span> records processed in the last 7 days.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-4 mb-4 border border-secondary border-opacity-10 bg-theme-panel">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon bg-accent bg-opacity-10 text-accent"><i class="bi bi-person-plus-fill"></i></div>
+                            <div>
+                                <div class="smaller text-secondary text-uppercase fw-bold ls-1">Newest Registry</div>
+                                <div class="small fw-bold">@ViewBag.LastUserJoined</div>
+                            </div>
+                        </div>
+                        <a asp-action="ManageUsers" class="btn btn-sm btn-outline-primary rounded-pill px-3 border-0 bg-primary bg-opacity-10">Review <i class="bi bi-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-top border-secondary border-opacity-10">
+                    <h5 class="mb-4 fw-800">Quick Management Actions</h5>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <a asp-action="ManageUsers" class="glass-panel p-4 d-flex align-items-center gap-3 text-decoration-none hover-scale w-100" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border) !important;">
+                                <div class="icon-circle bg-primary bg-opacity-10 text-primary shadow-sm">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-main">User Directory</div>
+                                    <div class="smaller text-secondary">Review and manage all portal users</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-action="Criteria" class="glass-panel p-4 d-flex align-items-center gap-3 text-decoration-none hover-scale w-100" style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border) !important;">
+                                <div class="icon-circle bg-success bg-opacity-10 text-success shadow-sm">
+                                    <i class="bi bi-gear-wide-connected"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-main">System Config</div>
+                                    <div class="smaller text-secondary">Configure accreditation criteria</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="glass-panel p-5 h-100 text-center shadow-lg border-0 d-flex flex-column justify-content-center">
+                <div class="mb-4">
+                    <i class="bi bi-cpu text-secondary opacity-25" style="font-size: 5rem;"></i>
+                </div>
+                <h4 class="mb-3 fw-800">Administrative Control</h4>
+                <p class="text-secondary small mb-5 px-3">As a System Administrator, you have full oversight of the NAAC accreditation processes and user roles.</p>
+<div class="d-grid gap-3">
+    <a asp-controller="Account" asp-action="Profile" class="btn btn-portal rounded-pill py-3 fw-bold">Update My Profile</a>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-scale { transition: transform 0.3s ease; }
+    .hover-scale:hover { transform: translateY(-3px); }
+    .icon-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .text-main { color: var(--text-primary); }
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.8; }
+    [data-theme="dark"] .text-main { color: #f1f5f9; }
+    [data-theme="dark"] .text-secondary-dim { color: #94a3b8; }
+    
+    .status-glass-card { transition: background 0.3s ease; }
+    .status-glass-card:hover { background: rgba(255,255,255,0.05) !important; }
+</style>

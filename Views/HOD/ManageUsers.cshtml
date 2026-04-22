@@ -1,0 +1,717 @@
+@model List<NAAC.Models.User>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Manage Users";
+}
+
+<div class="animate-fade-in shadow-lg">
+    <div class="glass-panel p-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h3 class="mb-1">Department Roster</h3>
+                <p class="text-secondary small mb-0">View and manage roles for all registered staff members.</p>
+            </div>
+            <button class="btn btn-portal btn-sm px-4" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus-fill me-2"></i> Add New User
+            </button>
+        </div>
+
+        <!-- Refined Premium Filter Hub -->
+        <div class="filter-hub p-3 mb-4 animate-fade-in shadow-sm">
+            <div class="row g-4 align-items-center">
+                <!-- Search Box -->
+                <div class="col-xl-4">
+                    <form asp-action="ManageUsers" method="get" class="search-box-wrapper">
+                        <input type="hidden" name="role" value="@ViewBag.ActiveFilter" />
+                        <input type="hidden" name="dateFilter" value="@ViewBag.ActiveDateFilter" />
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" name="search" class="search-input" 
+                               placeholder="Search staff by name or email..." value="@ViewBag.SearchTerm">
+                        @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+                        {
+                            <a asp-action="ManageUsers" asp-route-role="@ViewBag.ActiveFilter" asp-route-dateFilter="@ViewBag.ActiveDateFilter" 
+                               class="clear-search"><i class="bi bi-x-circle"></i></a>
+                        }
+                    </form>
+                </div>
+
+                <!-- Role Toggles -->
+                <div class="col-xl-5">
+                    <div class="role-toggle-group">
+                        <a asp-action="ManageUsers" asp-route-role="" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="@ViewBag.ActiveDateFilter"
+                           class="role-btn @(string.IsNullOrEmpty(ViewBag.ActiveFilter) ? "active" : "")">
+                            <span class="btn-text">All Staff</span>
+                        </a>
+                        <a asp-action="ManageUsers" asp-route-role="HOD" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="@ViewBag.ActiveDateFilter"
+                           class="role-btn @(ViewBag.ActiveFilter == "HOD" ? "active" : "")">
+                            <i class="bi bi-person-badge me-2"></i>
+                            <span class="btn-text">HODs</span>
+                        </a>
+                        <a asp-action="ManageUsers" asp-route-role="Faculty" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="@ViewBag.ActiveDateFilter"
+                           class="role-btn @(ViewBag.ActiveFilter == "Faculty" ? "active" : "")">
+                            <i class="bi bi-mortarboard me-2"></i>
+                            <span class="btn-text">Faculty</span>
+                        </a>
+                        <a asp-action="ManageUsers" asp-route-role="Coordinator" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="@ViewBag.ActiveDateFilter"
+                           class="role-btn @(ViewBag.ActiveFilter == "Coordinator" ? "active" : "")">
+                            <i class="bi bi-shield-check me-2"></i>
+                            <span class="btn-text">Coordinators</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Date Pills -->
+                <div class="col-xl-3">
+                    <div class="d-flex align-items-center justify-content-xl-end gap-2">
+                        <span class="date-label d-none d-xxl-inline">JOINED:</span>
+                        <div class="date-pill-container">
+                            <a asp-action="ManageUsers" asp-route-role="@ViewBag.ActiveFilter" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="Today"
+                               class="date-pill @(ViewBag.ActiveDateFilter == "Today" ? "active" : "")" title="Today">T</a>
+                            <a asp-action="ManageUsers" asp-route-role="@ViewBag.ActiveFilter" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="Week"
+                               class="date-pill @(ViewBag.ActiveDateFilter == "Week" ? "active" : "")" title="This Week">W</a>
+                            <a asp-action="ManageUsers" asp-route-role="@ViewBag.ActiveFilter" asp-route-search="@ViewBag.SearchTerm" asp-route-dateFilter="Month"
+                               class="date-pill @(ViewBag.ActiveDateFilter == "Month" ? "active" : "")" title="This Month">M</a>
+                        </div>
+                        @if (!string.IsNullOrEmpty(ViewBag.ActiveFilter) || !string.IsNullOrEmpty(ViewBag.SearchTerm) || !string.IsNullOrEmpty(ViewBag.ActiveDateFilter))
+                        {
+                            <a asp-action="ManageUsers" class="reset-all-btn" title="Reset All Filters">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4 small" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table-glass">
+                <thead>
+                    <tr>
+                        <th>Staff Profile</th>
+                        <th>Contact Info</th>
+                        <th>Department & University</th>
+                        <th>Role</th>
+                        <th>Joined Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    @foreach (var user in Model)
+                    {
+                        <tr id="user-row-@user.Id">
+                            <td>
+                                <div class="fw-bold">@user.FullName</div>
+                                <!-- <div class="smaller text-secondary">ID: #@user.Id.ToString("D4")</div> -->
+                            </td>
+                            <td>
+                                <div class="small fw-medium">@user.MobileNumber</div>
+                                <div class="smaller text-secondary">@user.Email</div>
+                            </td>
+                            <td>
+                                <div class="small">@user.CollegeName</div>
+                                <div class="smaller text-secondary">@user.UniversityName</div>
+                            </td>
+                            <td>
+                                <span class="user-badge badge-@(user.Role.ToLower())">
+                                    @user.Role
+                                </span>
+                            </td>
+                            <td>
+                                <div class="smaller fw-medium">@user.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                <div class="status-indicator bg-success mt-1" style="width: 25px; height: 4px; border-radius: 2px;"></div>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn-action" onclick="editUser(@user.Id)" title="Edit User">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete" onclick="deleteUser(@user.Id)" title="Delete User">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr id="noUsersRow">
+                            <td colspan="6" class="text-center py-5 text-secondary">
+                                <i class="bi bi-people fs-1 d-block mb-3 opacity-25"></i>
+                                No users found in the system.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content beautiful-modal border-0 overflow-hidden">
+            <div class="modal-header-gradient p-4">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <h4 class="modal-title fw-800 text-white mb-0" id="addUserModalLabel">Add Staff Member</h4>
+                        <div class="text-white-50 smaller fw-bold ls-2">SYSTEM INVITE</div>
+                    </div>
+                    <button type="button" class="btn-close-custom" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-4 pt-5 pb-5">
+                <form id="addUserForm" class="row g-4">
+                    <div class="col-12">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="text" name="fullName" class="form-control input-glass" id="fullNameInput" placeholder="Name" required>
+                            <label for="fullNameInput" class="text-white-50"><i class="bi bi-person me-2"></i>Full Name</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="email" name="email" class="form-control input-glass" id="emailInput" placeholder="Email" required>
+                            <label for="emailInput" class="text-white-50"><i class="bi bi-envelope me-2"></i>Email Address</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="text" name="mobileNumber" class="form-control input-glass" id="mobileInput" placeholder="Mobile" required>
+                            <label for="mobileInput" class="text-white-50"><i class="bi bi-phone me-2"></i>Mobile Number</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating text-white shadow-sm">
+                            <select name="role" class="form-select input-glass" id="roleInput" required>
+                                <option value="Faculty">Faculty Member</option>
+                                <option value="Coordinator">Coordinator</option>
+                            </select>
+                            <label for="roleInput" class="text-white-50"><i class="bi bi-shield-lock me-2"></i>Role</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-5">
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-glass-secondary w-100 py-3 fw-bold" data-bs-dismiss="modal">CANCEL</button>
+                            <button type="submit" class="btn btn-premium-primary w-100 py-3 fw-bold">
+                                <span>CREATE ACCOUNT</span>
+                                <i class="bi bi-arrow-right-short ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content beautiful-modal border-0 overflow-hidden">
+            <div class="modal-header-gradient p-4" style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <h4 class="modal-title fw-800 text-white mb-0" id="editUserModalLabel">Update Staff Profile</h4>
+                        <div class="text-white-50 smaller fw-bold ls-2">MODIFY ACCESS</div>
+                    </div>
+                    <button type="button" class="btn-close-custom" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body p-4 pt-5 pb-5">
+                <form id="editUserForm" class="row g-4">
+                    <input type="hidden" name="id" id="editUserId">
+                    <div class="col-12">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="text" name="fullName" class="form-control input-glass" id="editFullNameInput" placeholder="Name" required>
+                            <label for="editFullNameInput" class="text-white-50"><i class="bi bi-person me-2"></i>Full Name</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="email" name="email" class="form-control input-glass" id="editEmailInput" placeholder="Email" required>
+                            <label for="editEmailInput" class="text-white-50"><i class="bi bi-envelope me-2"></i>Email Address</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating text-white shadow-sm">
+                            <input type="text" name="mobileNumber" class="form-control input-glass" id="editMobileInput" placeholder="Mobile" required>
+                            <label for="editMobileInput" class="text-white-50"><i class="bi bi-phone me-2"></i>Mobile Number</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-floating text-white shadow-sm">
+                            <select name="role" class="form-select input-glass" id="editRoleInput" required>
+                                <option value="Faculty">Faculty Member</option>
+                                <option value="Coordinator">Coordinator</option>
+                            </select>
+                            <label for="editRoleInput" class="text-white-50"><i class="bi bi-shield-lock me-2"></i>Role</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-5">
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-glass-secondary w-100 py-3 fw-bold" data-bs-dismiss="modal">CANCEL</button>
+                            <button type="submit" class="btn w-100 py-3 fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); border: none; border-radius: 12px;">
+                                <span>SAVE CHANGES</span>
+                                <i class="bi bi-check-lg ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .beautiful-modal {
+        background: var(--card-bg) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+    }
+
+    .modal-header-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .fw-800 { font-weight: 800; }
+    .ls-2 { letter-spacing: 2px; font-size: 0.65rem; }
+
+    .btn-close-custom {
+        background: rgba(255, 255, 255, 0.25);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-close-custom:hover {
+        background: rgba(239, 68, 68, 0.9);
+        transform: rotate(90deg);
+        color: white;
+    }
+
+    .input-glass {
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 12px !important;
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        height: 60px !important;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
+    }
+
+    [data-theme='light'] .input-glass {
+        background-color: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    .input-glass:focus {
+        background-color: var(--card-bg) !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+    }
+
+    .form-floating > label {
+        padding: 1rem 1.25rem !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select ~ label {
+        color: #6366f1 !important;
+        opacity: 1 !important;
+        transform: scale(0.85) translateY(-0.85rem) translateX(0.15rem) !important;
+    }
+
+    /* Select box refinements */
+    .form-select.input-glass {
+        padding-top: 1.625rem !important;
+    }
+
+    [data-theme='dark'] .form-select.input-glass {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    }
+    
+    [data-theme='light'] .form-select.input-glass {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    }
+
+    .btn-premium-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        border: none;
+        color: white !important;
+        border-radius: 12px;
+        transition: all 0.3s;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-premium-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 25px -5px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-glass-secondary {
+        background: var(--secondary-color);
+        border: 1px solid var(--glass-border);
+        color: var(--text-secondary) !important;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .btn-glass-secondary:hover {
+        background: #f1f5f9;
+        color: var(--text-primary) !important;
+    }
+    
+    [data-theme='dark'] .btn-glass-secondary:hover {
+        background: rgba(255,255,255,0.1);
+    }
+    /* --- Redesigned Filter Hub Styles --- */
+    .filter-hub {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+    }
+
+    .search-box-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        color: var(--accent-color);
+        font-size: 1.1rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 3rem;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        transition: var(--transition-smooth);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .role-toggle-group {
+        display: flex;
+        background: var(--input-bg);
+        padding: 5px;
+        border-radius: 14px;
+        border: 1px solid var(--glass-border);
+        gap: 5px;
+    }
+
+    .role-btn {
+        flex: 1;
+        padding: 0.6rem 1rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: var(--transition-smooth);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .role-btn:hover {
+        background: rgba(79, 70, 229, 0.05);
+        color: var(--accent-color);
+    }
+
+    .role-btn.active {
+        background: var(--accent-color);
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .date-pill-container {
+        display: flex;
+        gap: 5px;
+        background: var(--secondary-color);
+        padding: 4px;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+    }
+
+    .date-pill {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        border-radius: 50%;
+        transition: var(--transition-smooth);
+    }
+
+    .date-pill:hover {
+        background: rgba(0,0,0,0.05);
+    }
+
+    .date-pill.active {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .date-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+    }
+
+    .reset-all-btn {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        transition: var(--transition-smooth);
+    }
+
+    .reset-all-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: rotate(-180deg);
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 15px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        opacity: 0.6;
+    }
+
+    .clear-search:hover {
+        opacity: 1;
+        color: #ef4444;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Live Search Logic (Debounced)
+            let searchTimeout;
+            const $searchInput = $('.search-input');
+            
+            // Set focus and move cursor to end if search is active
+            if ($searchInput.val()) {
+                $searchInput.focus();
+                const val = $searchInput.val();
+                $searchInput.val('').val(val); // Moves cursor to end
+            }
+
+            $searchInput.on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    $(this).closest('form').submit();
+                }, 500); 
+            });
+
+            $('#addUserForm').on('submit', function (e) {
+                e.preventDefault();
+
+                // Client-side Validation
+                const fullName = $(this).find('input[name="fullName"]').val().trim();
+                const email = $(this).find('input[name="email"]').val().trim();
+                const mobileNumber = $(this).find('input[name="mobileNumber"]').val().trim();
+
+                if (fullName.length < 3) {
+                    Swal.fire('Oops!', 'Please enter a valid Full Name (min 3 chars).', 'warning');
+                    return;
+                }
+
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    Swal.fire('Oops!', 'Please enter a valid email address.', 'warning');
+                    return;
+                }
+
+                const mobileRegex = /^[0-9]{10}$/;
+                if (!mobileRegex.test(mobileNumber)) {
+                    Swal.fire('Oops!', 'Mobile number must be exactly 10 digits.', 'warning');
+                    return;
+                }
+
+                const formData = $(this).serialize();
+                const submitBtn = $(this).find('button[type="submit"]');
+                const originalText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Creating...');
+
+                $.post('/HOD/AddUser', formData, function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: response.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message
+                        });
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+        });
+
+        function deleteUser(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('/HOD/DeleteUser', { id: id }, function (response) {
+                        if (response.success) {
+                            $(`#user-row-${id}`).fadeOut(500, function() {
+                                $(this).remove();
+                                if ($('#userTableBody tr').length === 0) {
+                                    location.reload();
+                                }
+                            });
+                            Swal.fire('Deleted!', response.message, 'success');
+                        } else {
+                            Swal.fire('Error!', response.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function editUser(id) {
+            $.get('/HOD/GetUser/' + id, function (user) {
+                if (user) {
+                    $('#editUserId').val(user.id);
+                    $('#editFullNameInput').val(user.fullName);
+                    $('#editEmailInput').val(user.email);
+                    $('#editMobileInput').val(user.mobileNumber);
+                    $('#editRoleInput').val(user.role);
+                    
+                    // Trigger input labels floating
+                    $('#editUserModal .form-control, #editUserModal .form-select').trigger('change');
+                    
+                    $('#editUserModal').modal('show');
+                } else {
+                    Swal.fire('Error', 'Could not fetch user data.', 'error');
+                }
+            });
+        }
+
+        $('#editUserForm').on('submit', function (e) {
+            e.preventDefault();
+            
+            // Client-side Validation
+            const fullName = $('#editFullNameInput').val().trim();
+            const email = $('#editEmailInput').val().trim();
+            const mobileNumber = $('#editMobileInput').val().trim();
+            
+            if (fullName.length < 3) {
+                Swal.fire('Oops!', 'Please enter a valid Full Name (min 3 chars).', 'warning');
+                return;
+            }
+
+            const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            if (!emailRegex.test(email)) {
+                Swal.fire('Oops!', 'Please enter a valid email address.', 'warning');
+                return;
+            }
+
+            const mobileRegex = /^[0-9]{10}$/;
+            if (!mobileRegex.test(mobileNumber)) {
+                Swal.fire('Oops!', 'Mobile number must be exactly 10 digits.', 'warning');
+                return;
+            }
+
+            const formData = $(this).serialize();
+            const submitBtn = $(this).find('button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
+
+            $.post('/HOD/UpdateUser', formData, function (response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message
+                    });
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+    </script>
+}

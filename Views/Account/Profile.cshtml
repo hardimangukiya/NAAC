@@ -1,0 +1,240 @@
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@model NAAC.Models.User
+@{
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("UserRole");
+    Layout = role == "Admin" ? "_AdminLayout" : "_DashboardLayout";
+    ViewData["Title"] = "User Profile";
+
+    string dashboardUrl = role == "Admin" ? "/Admin/Dashboard" : "/HOD/Dashboard";
+}
+
+<div class="animate-fade-in">
+    <div class="row g-4">
+        <!-- Profile Header Section -->
+        <div class="col-lg-4">
+            <div class="glass-panel p-5 text-center h-100">
+                <div class="position-relative d-inline-block mb-4 group">
+                    <div id="profile-pic-container" class="avatar-circle bg-accent text-white d-flex align-items-center justify-content-center overflow-hidden mx-auto shadow-lg" 
+                         style="width: 150px; height: 150px; border-radius: 50%; background: var(--accent-color); font-size: 3.5rem; border: 4px solid var(--glass-border);">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicturePath)) {
+                            <img src="@Model.ProfilePicturePath" id="profile-img" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+                        } else {
+                            <span id="initials">@(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())</span>
+                        }
+                    </div>
+                    
+                    <!-- Hover Overlay for Upload -->
+                    <label for="profilePicInput" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; cursor: pointer; border: 2px solid white;">
+                        <i class="bi bi-camera-fill"></i>
+                        <input type="file" id="profilePicInput" hidden accept="image/*" onchange="uploadPhoto(this)" />
+                    </label>
+                </div>
+
+                <h3 class="fw-bold mb-1" id="display-name">@Model.FullName</h3>
+                <p class="text-secondary mb-4">@Model.Role</p>
+
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-danger btn-sm rounded-3" onclick="deletePhoto()">
+                        <i class="bi bi-trash3 me-2"></i> Remove Photo
+                    </button>
+                    <hr class="my-2 border-secondary border-opacity-10">
+                    <a asp-action="ChangePassword" class="btn btn-portal rounded-3 w-100">
+                        <i class="bi bi-shield-lock me-2"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-lg-8">
+            <div class="glass-panel p-5 h-100">
+                <form id="profileDetailsForm" onsubmit="return handleProfileUpdate(event)">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex justify-content-between align-items-center mb-5">
+                        <h4 class="mb-0">Profile Information</h4>
+                        <div class="d-flex gap-2">
+                            <a href="@dashboardUrl" class="btn btn-sm btn-outline-secondary px-3 rounded-pill text-decoration-none d-flex align-items-center">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                            </a>
+                            <button type="button" id="edit-btn" class="btn btn-sm btn-outline-primary px-3 rounded-pill" onclick="toggleEditMode(true)">
+                                <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                            </button>
+                            <div id="edit-actions" class="d-none d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-success px-3 rounded-pill">Save Changes</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-3 rounded-pill" onclick="toggleEditMode(false)">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-sm-6">
+                            <label class="small text-secondary text-uppercase fw-bold ls-1 mb-2">Full Name</label>
+                            <input type="text" name="fullName" class="form-control-custom bg-transparent border-0 px-0 fw-medium" value="@Model.FullName" readonly required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="small text-secondary text-uppercase fw-bold ls-1 mb-2">Email Address</label>
+                            <input type="email" class="form-control-custom bg-transparent border-0 px-0 fw-medium text-secondary" value="@Model.Email" readonly disabled title="Email cannot be changed">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="small text-secondary text-uppercase fw-bold ls-1 mb-2">Mobile Number</label>
+                            <input type="text" name="mobileNumber" class="form-control-custom bg-transparent border-0 px-0 fw-medium" value="@Model.MobileNumber" readonly required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="small text-secondary text-uppercase fw-bold ls-1 mb-2">Registration Date</label>
+                            <div class="py-2 fw-medium text-secondary">@Model.CreatedAt.ToString("MMMM dd, yyyy")</div>
+                        </div>
+                        
+                        <div class="col-12 mt-5">
+                            <h5 class="mb-4 text-primary">Institution Details</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="glass-panel p-3 border-secondary border-opacity-10 bg-transparent shadow-none">
+                                        <div class="smaller text-secondary mb-1">College Name</div>
+                                        <input type="text" name="collegeName" class="form-control-custom bg-transparent border-0 p-0 fw-bold w-100" value="@Model.CollegeName" readonly required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="glass-panel p-3 border-secondary border-opacity-10 bg-transparent shadow-none">
+                                        <div class="smaller text-secondary mb-1">University Name</div>
+                                        <input type="text" name="universityName" class="form-control-custom bg-transparent border-0 p-0 fw-bold w-100" value="@Model.UniversityName" readonly required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <style>
+        .form-control-active {
+            background: rgba(var(--accent-rgb, 99, 102, 241), 0.05) !important;
+            border: 1px solid var(--accent-color) !important;
+            border-radius: 8px !important;
+            padding: 0.5rem 1rem !important;
+            color: var(--text-primary) !important;
+            transition: all 0.3s ease;
+        }
+        [data-theme="dark"] .form-control-active {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+        }
+        [data-theme="dark"] .form-control-active:focus {
+            border-color: var(--accent-color) !important;
+            background: rgba(99, 102, 241, 0.1) !important;
+        }
+    </style>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleEditMode(isEdit) {
+            const form = document.getElementById('profileDetailsForm');
+            const inputs = form.querySelectorAll('input:not([disabled])');
+            const editBtn = document.getElementById('edit-btn');
+            const editActions = document.getElementById('edit-actions');
+
+            inputs.forEach(input => {
+                input.readOnly = !isEdit;
+                if (isEdit) {
+                    input.classList.remove('border-0', 'px-0');
+                    input.classList.add('form-control-active');
+                } else {
+                    input.classList.add('border-0', 'px-0');
+                    input.classList.remove('form-control-active');
+                }
+            });
+
+            if (isEdit) {
+                editBtn.classList.add('d-none');
+                editActions.classList.remove('d-none');
+            } else {
+                editBtn.classList.remove('d-none');
+                editActions.classList.add('d-none');
+                form.reset(); // Revert changes if cancelled
+            }
+        }
+
+        async function handleProfileUpdate(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/Account/UpdateProfileDetails', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    document.getElementById('display-name').textContent = formData.get('fullName');
+                    document.getElementById('display-initials') ? document.getElementById('display-initials').textContent = formData.get('fullName').charAt(0).toUpperCase() : null;
+                    toggleEditMode(false);
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Update failed', error);
+            }
+            return false;
+        }
+
+        async function uploadPhoto(input) {
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append('profilePic', input.files[0]);
+
+                try {
+                    const response = await fetch('/Account/UpdateProfilePicture', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const container = document.getElementById('profile-pic-container');
+                        container.innerHTML = `<img src="${result.filePath}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                        
+                        const sidebarAvatar = document.querySelector('.sidebar-profile-link .avatar-circle');
+                        if (sidebarAvatar) {
+                            sidebarAvatar.innerHTML = `<img src="${result.filePath}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                        }
+                        alert('Photo updated successfully!');
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Upload failed', error);
+                }
+            }
+        }
+
+        async function deletePhoto() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                try {
+                    const response = await fetch('/Account/DeleteProfilePicture', {
+                        method: 'POST'
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const container = document.getElementById('profile-pic-container');
+                        const name = document.getElementById('display-name').textContent;
+                        const initials = name.charAt(0).toUpperCase();
+                        container.innerHTML = `<span id="initials">${initials}</span>`;
+                        
+                        const sidebarAvatar = document.querySelector('.sidebar-profile-link .avatar-circle');
+                        if (sidebarAvatar) {
+                            sidebarAvatar.innerHTML = initials;
+                        }
+                        alert('Photo removed.');
+                    }
+                } catch (error) {
+                    console.error('Delete failed', error);
+                }
+            }
+        }
+    </script>
+}

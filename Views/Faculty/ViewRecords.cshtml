@@ -1,0 +1,131 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Data Repository";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            @if (ViewBag.CurrentTable != null)
+            {
+                var curTable = (NAAC.Models.NAACTable)ViewBag.CurrentTable;
+                <h2 class="fw-800 mb-0">Data: @curTable.TableNumber</h2>
+                <p class="text-secondary small">@curTable.Name</p>
+            }
+            else
+            {
+                <h2 class="fw-800 mb-0">Submission Archive</h2>
+                <p class="text-secondary small">Comprehensive overview of institutional document logs and verified reporting history</p>
+            }
+        </div>
+        
+        <!-- Filter Dropdown -->
+        <div class="dropdown">
+            <button class="btn glass-input border-0 px-4 py-2 dropdown-toggle fw-bold shadow-sm no-caret" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-filter me-2 text-primary"></i> Filter by Table
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 glass-panel mt-2 rounded-4">
+                <li><a class="dropdown-item rounded-3 mb-1" href="@Url.Action("ViewRecords", "Faculty")">All Data</a></li>
+                @if (ViewBag.AvailableTables != null)
+                {
+                    @foreach (var table in (IEnumerable<NAAC.Models.NAACTable>)ViewBag.AvailableTables)
+                    {
+                        <li><a class="dropdown-item rounded-3 mb-1 small" href="@Url.Action("ViewRecords", "Faculty", new { tableId = table.Id })">@table.TableNumber: @table.Name</a></li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <!-- Records are grouped by table for better viewing -->
+        @foreach (var tableGroup in Model.GroupBy(m => m.TableId))
+        {
+            var tableInfo = tableGroup.First().Table;
+            var jsonColumns = new List<string>();
+            try {
+                var firstRecord = tableGroup.First();
+                var data = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(firstRecord.JsonData ?? "{}") ?? new Dictionary<string, string>();
+                jsonColumns = data.Keys.ToList();
+            } catch { }
+
+            <div class="glass-panel p-0 overflow-hidden border-0 shadow-lg mb-5 animate-fade-in">
+                <div class="p-3 px-4 bg-primary bg-opacity-10 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-10">
+                    <div>
+                        <span class="badge bg-primary text-white mb-1">Table @(tableInfo?.TableNumber ?? "N/A")</span>
+                        <h6 class="fw-bold mb-0 text-main">@(tableInfo?.Name ?? "No Table Name")</h6>
+                    </div>
+                    <div class="smaller text-secondary fw-bold">@tableGroup.Count() Records</div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-glass table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Year</th>
+                                @foreach (var col in jsonColumns)
+                                {
+                                    <th>@col</th>
+                                }
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var record in tableGroup)
+                            {
+                                var rowData = new Dictionary<string, string>();
+                                try { rowData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(record.JsonData ?? "{}") ?? new Dictionary<string, string>(); } catch { }
+                                
+                                <tr style="cursor: pointer;" onclick="globalViewTableData(@record.TableId, '@(tableInfo?.TableNumber ?? "")', '@Html.Raw((tableInfo?.Name ?? "").Replace("'", "\\'"))', '@Url.Action("GetTableRecordsJson", "Faculty")')" class="hover-up transition-300">
+                                    <td class="ps-4"><span class="fw-bold small text-main">@record.AcademicYear</span></td>
+                                    @foreach (var col in jsonColumns)
+                                    {
+                                        <td class="text-main">
+                                            <div class="small text-truncate" style="max-width: 150px;" title="@(rowData.ContainsKey(col) ? rowData[col] : "")">
+                                                @(rowData.ContainsKey(col) ? rowData[col] : "-")
+                                            </div>
+                                        </td>
+                                    }
+                                    <td class="text-center" onclick="event.stopPropagation()">
+                                        <div>
+                                            <span class="badge @(record.Status == "Verified" || record.Status == "Finalized" || record.Status == "Approved" ? "bg-success" : (record.Status == "Submitted" ? "bg-primary" : "bg-danger")) bg-opacity-10 @(record.Status == "Verified" || record.Status == "Finalized" || record.Status == "Approved" ? "text-success" : (record.Status == "Submitted" ? "text-primary" : "text-danger")) smaller px-2 py-1 rounded-pill">
+                                                @record.Status
+                                            </span>
+                                            @if (record.Status == "Rejected")
+                                            {
+                                                <div class="smaller text-danger mt-1 italic" title="@record.Remarks">
+                                                    <i class="bi bi-info-circle me-1"></i> @(string.IsNullOrEmpty(record.Remarks) ? "No remarks" : (record.Remarks.Length > 20 ? record.Remarks.Substring(0, 17) + "..." : record.Remarks))
+                                                </div>
+                                                <a asp-action="DataEntry" asp-route-tableId="@record.TableId" class="badge bg-danger text-white border-0 mt-2 text-decoration-none">
+                                                    <i class="bi bi-pencil-square me-1"></i> Edit & Resubmit
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-center smaller text-secondary">
+                                        @record.CreatedAt.ToString("MMM dd, yyyy")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="glass-panel p-5 text-center">
+            <div class="opacity-25 mb-3"><i class="bi bi-stack fs-1"></i></div>
+            <h5 class="text-secondary">No data records found</h5>
+            <p class="smaller text-muted">Submit your first record via the <a asp-action="DataEntry" class="text-primary fw-bold">Data Entry</a> module.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .no-caret::after { display: none !important; }
+</style>

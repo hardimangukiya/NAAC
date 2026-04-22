@@ -1,0 +1,236 @@
+@model IEnumerable<dynamic>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Institutional Integrity Monitor";
+    double overallReadiness = Model.Any() ? Model.Average(m => (int)m.Progress) : 0;
+}
+
+<div class="animate-fade-in p-2 p-md-0">
+    <!-- Analysis Banner -->
+    <div class="premium-glass-card mb-5 border-0 shadow-lg relative overflow-hidden bg-executive-banner">
+        <div class="glow-orb-banner"></div>
+        <div class="relative-content p-4 p-md-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <a asp-action="Criteria" class="btn-action-glass shadow-sm text-secondary">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                        <span class="badge-accent-premium">SYSTEM AUDIT · CYCLE 2026</span>
+                    </div>
+                    <h1 class="display-5 fw-800 text-gradient-primary tracking-tight mb-3">Institutional Integrity Report</h1>
+                    <p class="text-secondary lead mb-0 opacity-80" style="max-width: 650px;">Real-time analytical verification of departmental documentation compliance and framework readiness.</p>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="gauge-studio-container">
+                        <div class="gauge-studio shadow-sm">
+                            <svg viewBox="0 0 36 36" class="circular-chart-premium @(overallReadiness < 40 ? "red" : overallReadiness < 70 ? "orange" : "green")">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle" stroke-dasharray="@overallReadiness, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <text x="18" y="20.35" class="percentage fw-800">@((int)overallReadiness)%</text>
+                            </svg>
+                        </div>
+                        <div class="gauge-label text-secondary opacity-50 uppercase fw-800 ls-2">Institutional Readiness</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakdown Grid -->
+    <div class="row g-4 mb-5">
+        @foreach (var result in Model)
+        {
+            var c = (NAAC.Models.Criteria)result.Criterion;
+            int progress = (int)result.Progress;
+            <div class="col-xl-4 col-md-6">
+                <div class="premium-glass-card h-100 hover-premium-card stagger-item shadow-sm">
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="crit-indicator-small shadow-sm">
+                                <span class="num text-white">@c.Number</span>
+                            </div>
+                            <div class="badge rounded-pill @(progress > 70 ? "bg-success" : progress > 30 ? "bg-warning" : "bg-danger") bg-opacity-10 @(progress > 70 ? "text-success" : progress > 30 ? "text-warning" : "text-danger") px-3 py-1 smaller fw-800 ls-1">
+                                @(progress > 70 ? "OPTIMIZED" : progress > 30 ? "PENDING" : "CRITICAL")
+                            </div>
+                        </div>
+                        
+                        <h5 class="fw-800 text-main mb-1">Criterion @c.Number</h5>
+                        <p class="smaller text-secondary opacity-60 mb-4 line-clamp-1">@c.Title</p>
+                        
+                        <div class="mt-4 pt-2">
+                            <div class="d-flex justify-content-between smaller mb-2">
+                                <span class="fw-bold text-secondary uppercase ls-1">Structure Coverage</span>
+                                <span class="fw-800 text-main">@progress%</span>
+                            </div>
+                            <div class="progress-premium mb-4">
+                                <div class="bar @(progress > 70 ? "bg-success" : progress > 30 ? "bg-warning" : "bg-danger")" style="width: @progress%"></div>
+                            </div>
+                            
+                            <div class="info-strip rounded-4 d-flex justify-content-between align-items-center p-3">
+                                <span class="smaller text-secondary fw-bold">Active Data Registries:</span>
+                                <span class="smaller fw-800 text-main">@result.TablesFilled / @result.TotalTables</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Actions -->
+    <div class="premium-glass-card p-4 shadow-sm border-0">
+        <div class="row align-items-center g-4">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-4 px-md-3">
+                    <div class="action-icon-box bg-danger bg-opacity-10 text-danger rounded-4">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                    </div>
+                    <div>
+                        <div class="fw-800 text-main h6 mb-1">Export Compliance PDF</div>
+                        <div class="smaller text-secondary opacity-70">Official institutional audit manifest</div>
+                    </div>
+                    <button class="btn btn-action-pill text-danger ms-auto" onclick="window.location.href='/Admin/BulkExport?format=pdf'"><i class="bi bi-download"></i></button>
+                </div>
+            </div>
+            <div class="col-md-6 border-start-glass">
+                <div class="d-flex align-items-center gap-4 ps-md-4">
+                    <div class="action-icon-box bg-success bg-opacity-10 text-success rounded-4">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-800 text-main h6 mb-1">Trigger Notifications</div>
+                        <div class="smaller text-secondary opacity-70">Notify department leads for gaps</div>
+                    </div>
+                    <button class="btn btn-action-pill text-success ms-auto" onclick="triggerReminders()"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function triggerReminders() {
+    if(confirm('Initiate global compliance reminders for incomplete criteria?')) {
+        fetch('/Admin/TriggerReminders', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert('Success: ' + data.message);
+                } else {
+                    alert('Note: ' + data.message);
+                }
+            });
+    }
+}
+</script>
+
+<style>
+    :root {
+        --text-main: #0f172a;
+        --text-secondary: #64748b;
+        --glass-bg: #ffffff;
+        --glass-border: rgba(0, 0, 0, 0.08);
+        --accent-primary: #6366f1;
+        --accent-secondary: #a855f7;
+    }
+
+    [data-theme="dark"] {
+        --text-main: #f8fafc;
+        --text-secondary: #94a3b8;
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .fw-800 { font-weight: 800; }
+    .ls-1 { letter-spacing: 1px; }
+    .ls-2 { letter-spacing: 2px; }
+    .uppercase { text-transform: uppercase; }
+    .text-main { color: var(--text-main) !important; }
+    .text-secondary { color: var(--text-secondary) !important; }
+    .text-gradient-primary {
+        background: linear-gradient(135deg, var(--text-main) 30%, var(--accent-primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .premium-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        transition: all 0.4s ease;
+    }
+    .hover-premium-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+
+    .bg-executive-banner {
+        background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.08), transparent), var(--glass-bg);
+    }
+    [data-theme="dark"] .bg-executive-banner {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0) 100%);
+    }
+
+    .btn-action-glass {
+        width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--glass-border);
+        background: var(--glass-bg); display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s; color: var(--text-main);
+    }
+    .btn-action-glass:hover { transform: scale(1.1); background: rgba(0,0,0,0.02); }
+
+    .badge-accent-premium {
+        background: rgba(99, 102, 241, 0.1); color: var(--accent-primary);
+        padding: 6px 16px; border-radius: 100px; font-size: 0.7rem; font-weight: 800;
+        letter-spacing: 1.5px;
+    }
+
+    .gauge-studio-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+    .gauge-studio {
+        width: 140px; height: 140px; padding: 12px; border-radius: 50%;
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+    }
+    .circular-chart-premium { width: 100%; height: 100%; }
+    .circle-bg { fill: none; stroke: rgba(0,0,0,0.05); stroke-width: 2.8; }
+    [data-theme="dark"] .circle-bg { stroke: rgba(255,255,255,0.05); }
+    .circle { fill: none; stroke-width: 3.2; stroke-linecap: round; transition: stroke-dasharray 1s ease; }
+    .percentage { fill: var(--text-main); font-size: 0.55em; text-anchor: middle; font-family: 'Outfit', sans-serif; }
+
+    .circular-chart-premium.green .circle { stroke: #10b981; }
+    .circular-chart-premium.orange .circle { stroke: #f59e0b; }
+    .circular-chart-premium.red .circle { stroke: #ef4444; }
+
+    .crit-indicator-small {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    .crit-indicator-small .num { font-size: 1.2rem; font-weight: 800; }
+
+    .progress-premium { width: 100%; height: 8px; background: rgba(0,0,0,0.04); border-radius: 100px; overflow: hidden; }
+    [data-theme="dark"] .progress-premium { background: rgba(255,255,255,0.04); }
+    .progress-premium .bar { height: 100%; transition: width 1s ease; }
+
+    .info-strip { background: rgba(0,0,0,0.02); border: 1px solid var(--glass-border); }
+    [data-theme="dark"] .info-strip { background: rgba(255,255,255,0.02); }
+
+    .action-icon-box { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .btn-action-pill {
+        background: var(--glass-bg); border: 1px solid var(--glass-border); width: 38px; height: 38px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .btn-action-pill:hover { transform: scale(1.1); background: rgba(0,0,0,0.03); }
+
+    .border-start-glass { border-left: 1px solid var(--glass-border); }
+    @@media (max-width: 768px) { .border-start-glass { border-left: 0; border-top: 1px solid var(--glass-border); padding-top: 1rem; } }
+
+    .glow-orb-banner {
+        position: absolute; top: -20%; right: -10%; width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%); pointer-events: none;
+    }
+
+    .stagger-item {
+        opacity: 0; transform: translateY(20px);
+        animation: staggerFadeIn 0.6s ease forwards;
+    }
+    @@keyframes staggerFadeIn { to { opacity: 1; transform: translateY(0); } }
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+</style>

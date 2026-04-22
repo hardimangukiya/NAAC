@@ -1,0 +1,128 @@
+@model List<NAAC.Models.User>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "User Directory";
+}
+
+<div class="animate-fade-in">
+    <div class="glass-panel p-5">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h4 class="mb-1">Platform Users</h4>
+                <p class="text-secondary small mb-0">Manage and review all accounts across the system</p>
+            </div>
+            <div class="d-flex gap-3">
+                <div class="position-relative">
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                    <input type="text" id="userSearch" class="form-control-custom ps-5 py-2 rounded-pill" placeholder="Search users..." style="width: 300px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-glass">
+                <thead>
+                    <tr>
+                        <th>User Details</th>
+                        <th>Institution</th>
+                        <th>Role</th>
+                        <th>Joined Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    @foreach (var user in Model)
+                    {
+                        <tr id="user-row-@user.Id">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-circle bg-accent text-white d-flex align-items-center justify-content-center overflow-hidden" style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-color); font-weight: bold; flex-shrink: 0;">
+                                        @if (!string.IsNullOrEmpty(user.ProfilePicturePath)) {
+                                            <img src="@user.ProfilePicturePath" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+                                        } else {
+                                            @user.FullName.Substring(0, 1).ToUpper()
+                                        }
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-primary">@user.FullName</div>
+                                        <div class="smaller text-secondary">@user.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="smaller fw-medium">@user.CollegeName</div>
+                                <div class="smaller text-secondary">@user.UniversityName</div>
+                            </td>
+                            <td>
+                                <span class="user-badge badge-@(user.Role.ToLower())">
+                                    <i class="bi bi-person-fill me-1"></i> @user.Role
+                                </span>
+                            </td>
+                            <td>
+                                <div class="smaller">@user.CreatedAt.ToString("MMM dd, yyyy")</div>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a asp-action="EditUser" asp-route-id="@user.Id" class="btn-action text-decoration-none d-flex align-items-center justify-content-center" title="Edit Permissions">
+                                        <i class="bi bi-shield-lock"></i>
+                                    </a>
+                                    @if (user.Role != "Admin")
+                                    {
+                                        <button class="btn-action btn-delete" onclick="deleteUser(@user.Id, '@user.FullName')" title="Remove User">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .badge-hod { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+    .badge-faculty { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+    .badge-admin { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+    
+    [data-theme='dark'] .badge-hod { background: rgba(234, 179, 8, 0.1); color: var(--accent-color); }
+    [data-theme='dark'] .badge-faculty { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+    [data-theme='dark'] .badge-admin { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+</style>
+
+@section Scripts {
+    <script>
+        // Search Functionality
+        document.getElementById('userSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#userTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+
+        // Delete Functionality
+        async function deleteUser(id, name) {
+            if (confirm(`Are you sure you want to remove ${name} from the system? This action cannot be undone.`)) {
+                try {
+                    const response = await fetch(`/Admin/DeleteUser/${id}`, { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const row = document.getElementById(`user-row-${id}`);
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Delete failed', error);
+                }
+            }
+        }
+    </script>
+}

@@ -1,0 +1,129 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Institutional Data Log";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Institutional Data Log</h2>
+            <p class="text-secondary small">Comprehensive history of all department data submissions and verification states.</p>
+        </div>
+        <a href="@Url.Action("Dashboard")" class="btn btn-sm btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="glass-panel p-4 shadow-lg border-0">
+        <div class="table-responsive">
+            <table class="table-glass w-100 align-middle" id="logTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Faculty / Year</th>
+                        <th>Table Information</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var record in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-primary">@record.Faculty?.FullName</div>
+                                <div class="smaller text-secondary-dim">@record.AcademicYear</div>
+                            </td>
+                            <td>
+                                <div class="small fw-bold">Table @record.Table?.TableNumber</div>
+                                <div class="smaller text-secondary text-truncate" style="max-width: 250px;">@record.Table?.Name</div>
+                            </td>
+                            <td>
+                                @if (record.Status == "Finalized")
+                                {
+                                    <span class="badge rounded-pill bg-success px-3 py-1">Finalized</span>
+                                }
+                                else if (record.Status == "Verified")
+                                {
+                                    <span class="badge rounded-pill bg-info text-dark px-3 py-1">Verified (HOD)</span>
+                                }
+                                else if (record.Status == "Submitted")
+                                {
+                                    <span class="badge rounded-pill bg-warning text-dark px-3 py-1">Review Pending</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill bg-secondary px-3 py-1">@record.Status</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="small">@(record.UpdatedAt?.ToString("dd MMM yyyy") ?? record.CreatedAt.ToString("dd MMM yyyy"))</div>
+                                <div class="smaller text-secondary-dim">@(record.UpdatedAt?.ToString("HH:mm") ?? record.CreatedAt.ToString("HH:mm"))</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-premium-primary text-white rounded-pill px-3 fw-bold" onclick="viewRecordDetails(@record.Id)">
+                                    View Details
+                                </button>
+                                
+                                <!-- Hidden full data for modal -->
+                                <div id="full-log-data-@record.Id" class="d-none" 
+                                     data-title="@record.Table?.Name" 
+                                     data-faculty="@record.Faculty?.FullName"
+                                     data-ay="@record.AcademicYear">
+                                    @Html.Raw(record.JsonData)
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Details Offcanvas (Reusing layout) -->
+<div class="offcanvas offcanvas-end glass-panel border-0 border-start border-primary border-opacity-25 shadow-lg" tabindex="-1" id="logDetailsOffcanvas" style="width: 500px; background: var(--card-bg) !important;">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-10 p-4">
+        <div>
+            <h5 class="offcanvas-title fw-800 mb-0" style="color: var(--text-primary);">Record Submission</h5>
+            <p class="text-secondary small mb-0" id="logOffcanvasSubTitle"></p>
+        </div>
+        <button type="button" class="btn-close btn-close-white opacity-50" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4" id="logOffcanvasContent"></div>
+</div>
+
+<style>
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.7; }
+    [data-theme="dark"] .text-secondary-dim { color: #94a3b8; }
+    #logTable th { padding-top: 20px; padding-bottom: 20px; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+</style>
+
+@section Scripts {
+    <script>
+        function viewRecordDetails(id) {
+            const dataElem = document.getElementById(`full-log-data-${id}`);
+            const jsonData = JSON.parse(dataElem.textContent);
+            const faculty = dataElem.getAttribute('data-faculty');
+            const ay = dataElem.getAttribute('data-ay');
+
+            document.getElementById('logOffcanvasSubTitle').textContent = `${faculty} | ${ay}`;
+
+            let html = '<div class="space-y-4">';
+            for (let [key, value] of Object.entries(jsonData)) {
+                html += `
+                    <div class="mb-4 pb-2 border-bottom border-secondary border-opacity-10">
+                        <div class="smaller text-secondary-dim text-uppercase fw-bold ls-1 mb-2">${key}</div>
+                        <div class="fw-bold" style="color: var(--text-primary); word-break: break-all;">${value || '-'}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            document.getElementById('logOffcanvasContent').innerHTML = html;
+
+            const bsOffcanvas = new bootstrap.Offcanvas(document.getElementById('logDetailsOffcanvas'));
+            bsOffcanvas.show();
+        }
+    </script>
+}

@@ -1,0 +1,242 @@
+@model IEnumerable<NAAC.Models.CriteriaAssignment>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Coordinator Hub";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <!-- Top Header: Dynamic Year Filter -->
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Coordinator Hub</h2>
+            <p class="text-secondary small">Manage Faculty Mapping and NAAC Structural Monitoring</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn glass-panel px-4 py-2 dropdown-toggle border-0 fw-bold shadow-sm" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-calendar3 me-2 text-primary"></i> <span class="text-primary-dim">Academic Year:</span> <span class="text-primary">@ViewBag.SelectedYear</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end glass-panel border-0 shadow-lg p-2">
+                @foreach (var year in ViewBag.AcademicYears)
+                {
+                    <li>
+                        <a class="dropdown-item rounded-3 py-2 @(year == ViewBag.SelectedYear ? "bg-primary text-white" : "")" 
+                           asp-action="Dashboard" asp-route-year="@year">
+                            @year @(year == ViewBag.AcademicYears[0] ? "(Current)" : "")
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <!-- 1. SUMMARY CARDS -->
+    <div class="row g-4 mb-5">
+        <div class="col-sm-6 col-md-4 col-xl">
+            <a asp-action="FacultyList" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card-modern border-primary card-hover">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary mb-3"><i class="bi bi-people"></i></div>
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Total Faculty</div>
+                    <div class="h2 fw-800 mb-0">@ViewBag.TotalFaculty</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-xl">
+            <a asp-action="ManageCriteria" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card-modern border-success card-hover">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success mb-3"><i class="bi bi-list-check"></i></div>
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Total Criteria</div>
+                    <div class="h2 fw-800 mb-0">@ViewBag.TotalCriteria</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-xl">
+            <a asp-action="RecordsLog" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card-modern border-info card-hover">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info mb-3"><i class="bi bi-database"></i></div>
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Total Records</div>
+                    <div class="h2 fw-800 mb-0">@ViewBag.TotalRecords</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-md-4 col-xl">
+            <a asp-action="Verifications" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card-modern border-danger card-hover">
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger mb-3"><i class="bi bi-patch-check"></i></div>
+                    <div class="small text-secondary fw-bold text-uppercase ls-1">Approved from HOD</div>
+                    <div class="h2 fw-800 mb-0">@ViewBag.ApprovedFromHODCount</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- 2. NAAC READINESS SCORE -->
+        <div class="col-lg-4">
+            <div class="glass-panel p-5 h-100 text-center d-flex flex-column justify-content-center border-0 shadow-lg">
+                <h5 class="fw-bold mb-4">Department Readiness Score</h5>
+                <div class="readiness-container mb-4 position-relative mx-auto" style="width: 200px; height: 200px;">
+                    <svg viewBox="0 0 36 36" class="circular-chart @(ViewBag.ReadinessScore < 41 ? "red" : ViewBag.ReadinessScore < 71 ? "orange" : "green")">
+                        <path class="circle-bg" stroke="rgba(255,255,255,0.05)" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="circle" stroke-dasharray="@ViewBag.ReadinessScore, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <text x="18" y="20.35" class="percentage fw-800" fill="currentColor">@ViewBag.ReadinessScore%</text>
+                    </svg>
+                </div>
+                <div class="small text-secondary text-uppercase fw-bold ls-1 mt-3">Current Status</div>
+                <div class="badge mt-2 p-2 px-3 @(ViewBag.ReadinessScore < 41 ? "bg-danger" : ViewBag.ReadinessScore < 71 ? "bg-warning" : "bg-success") bg-opacity-10 @(ViewBag.ReadinessScore < 41 ? "text-danger" : ViewBag.ReadinessScore < 71 ? "text-warning" : "text-success") border-0 rounded-pill">
+                    @(ViewBag.ReadinessScore < 41 ? "Critical" : ViewBag.ReadinessScore < 71 ? "Progressing" : "Audit Ready")
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CRITERIA-WISE PROGRESS -->
+        <div class="col-lg-8">
+            <div class="glass-panel p-5 h-100 shadow-lg border-0">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Structural Monitoring</h5>
+                    <a asp-action="ManageCriteria" class="btn btn-sm btn-outline-primary rounded-pill px-3 border-0 bg-primary bg-opacity-10">Manage Structure <i class="bi bi-gear ms-1"></i></a>
+                </div>
+                <div class="space-y-4">
+                    @foreach (var crit in ViewBag.CriteriaOverview)
+                    {
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-primary-dim">@crit.Name</span>
+                                <span class="smaller fw-800" style="color: @crit.Color">@crit.Progress%</span>
+                            </div>
+                            <div class="progress" style="height: 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.02);">
+                                <div class="progress-bar rounded-pill shadow-sm" style="width: @crit.Progress%; background-color: @crit.Color; transition: width 1.5s ease-out;"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- ALERTS / MISSING DATA -->
+                <div class="mt-5 pt-4 border-top">
+                    <h6 class="smaller fw-bold text-uppercase text-danger ls-1 mb-3"><i class="bi bi-bell-fill me-1"></i> Critical Alerts (@(ViewBag.CriticalAlerts?.Count ?? 0))</h6>
+                    
+                    @if (ViewBag.CriticalAlerts != null && ((List<string>)ViewBag.CriticalAlerts).Any())
+                    {
+                        @foreach (var alert in ViewBag.CriticalAlerts)
+                        {
+                            <div class="alert bg-danger border-0 p-3 mb-3 shadow-lg animate-pulse" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 16px;">
+                                <div class="d-flex align-items-center">
+                                    <div class="glass-icon-container rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);">
+                                        <i class="bi bi-exclamation-triangle-fill text-white fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="smaller fw-800 text-white text-uppercase ls-1 opacity-75 mb-1">System Action Required</div>
+                                        <div class="small fw-bold text-white">@alert</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 opacity-50 small">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i> No critical structural issues detected.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. FACULTY vs CRITERIA TABLE -->
+    <div class="glass-panel p-5 shadow-lg border-0 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+            <h3 class="mb-0 fw-800">Faculty Mapping</h3>
+            <div class="glass-panel border-0 px-3 d-flex align-items-center bg-white bg-opacity-5 shadow-sm" style="min-width: 320px; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 12px;">
+                <i class="bi bi-people-fill text-primary me-2"></i>
+                <select id="facultyDropdown" class="form-select bg-transparent border-0 text-primary-dim small shadow-none py-2 ps-1" style="cursor: pointer; flex: 1;">
+                    <option value="" class="bg-dark text-white">All Active Faculty</option>
+                    @{
+                        var uniqueFaculty = Model.Where(a => a.Faculty != null).GroupBy(a => a.Faculty!.Id).Select(g => g.First().Faculty).OrderBy(f => f!.FullName).ToList();
+                        foreach (var f in uniqueFaculty)
+                        {
+                            <option value="@f!.FullName" class="bg-dark text-white">@f.FullName</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table-glass w-100" id="facultyTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Faculty Name</th>
+                        <th>Assigned Criteria</th>
+                        <th class="text-end pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ass in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 py-4">
+                                <div class="fw-bold text-primary">@ass.Faculty?.FullName</div>
+                                <div class="smaller text-secondary">@ass.Faculty?.Email</div>
+                            </td>
+                            <td>
+                                <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill small">@ass.Criteria?.Number</div>
+                                <span class="small ms-2">@ass.Criteria?.Title</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 small">
+                                    Active Lead
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .circular-chart { display: block; margin: 0 auto; width: 100%; height: 100%; }
+    .circle-bg { fill: none; stroke-width: 3; }
+    .circle { fill: none; stroke-width: 3.2; stroke-linecap: round; transition: stroke-dasharray 1s ease-in-out; }
+    .percentage { font-family: 'Outfit', sans-serif; font-size: 0.6rem; text-anchor: middle; color: var(--text-primary); }
+    [data-theme="dark"] .percentage { fill: #f8fafc; }
+    
+    .circular-chart.green .circle { stroke: #10b981; filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.3)); }
+    .circular-chart.orange .circle { stroke: #f59e0b; filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.3)); }
+    .circular-chart.red .circle { stroke: #ef4444; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.3)); }
+    
+    [data-theme="dark"] .circle-bg { stroke: rgba(255, 255, 255, 0.05); }
+
+    .stat-card-modern { transition: var(--transition-smooth); border-bottom: 4px solid transparent; }
+    .stat-card-modern:hover { transform: translateY(-8px); border-bottom-color: inherit; }
+    .stat-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    
+    .ls-1 { letter-spacing: 1px; }
+    .animate-pulse { animation: pulse 2s infinite; }
+    @@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+    .text-primary-dim { color: var(--text-primary); opacity: 0.8; }
+    [data-theme="dark"] .text-primary-dim { color: #f1f5f9; }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search Filter
+            // Faculty Dropdown Filter
+            document.getElementById('facultyDropdown').addEventListener('change', function() {
+                let val = this.value.toLowerCase().trim();
+                let rows = document.querySelectorAll('#facultyTable tbody tr');
+                rows.forEach(row => {
+                    // Check faculty name column (first td)
+                    let facultyName = row.querySelector('td:first-child .text-primary')?.innerText.toLowerCase().trim() || "";
+                    if (val === "" || facultyName === val) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+}

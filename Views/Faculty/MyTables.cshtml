@@ -1,0 +1,135 @@
+@model IEnumerable<NAAC.Models.NAACTable>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Task Structure";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Structural Tables</h2>
+            <p class="text-secondary small">Data submission tables associated with your assigned criteria</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn glass-input border-0 shadow-sm rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-medium dropdown-toggle no-caret" type="button" id="tableFilterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-filter text-primary"></i>
+                <span id="selectedFilterText" class="text-primary-dim">Filter by Table</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 glass-panel mt-2 rounded-4 p-2" aria-labelledby="tableFilterDropdownBtn" style="min-width: 280px; max-height: 400px; overflow-y: auto;">
+                <li><a class="dropdown-item rounded-3 mb-1 filter-item" href="#" data-value="">All Data</a></li>
+                @if (Model != null)
+                {
+                    @foreach (var table in Model)
+                    {
+                        <li><a class="dropdown-item rounded-3 mb-1 filter-item" href="#" data-value="@table.TableNumber">@table.TableNumber: @(table.Name.Length > 40 ? table.Name.Substring(0, 37) + "..." : table.Name)</a></li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="glass-panel p-0 overflow-hidden border-0 shadow-lg mb-5">
+        <div class="table-responsive">
+            <table class="table-glass w-100 align-middle mb-0">
+                <thead>
+                    <tr class="bg-primary bg-opacity-5">
+                        <th class="ps-4">Table No</th>
+                        <th>Criterion</th>
+                        <th>Table Name</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var table in Model)
+                        {
+                            <tr style="cursor: pointer;" onclick="viewTableData(@table.Id, '@table.TableNumber', '@Html.Raw(table.Name.Replace("'", "\\'"))')" class="hover-up transition-300">
+                                <td class="ps-4">
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2">@table.TableNumber</span>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold">Criterion @table.Criteria?.Number</div>
+                                </td>
+                                <td>
+                                    <div class="small fw-medium">@table.Name</div>
+                                    <div class="smaller text-truncate" style="max-width: 300px;">@table.Description</div>
+                                </td>
+                                <td class="text-center" onclick="event.stopPropagation()">
+                                    <a asp-action="DataEntry" asp-route-tableId="@table.Id" class="btn btn-premium-primary btn-sm px-3 rounded-pill">
+                                        <i class="bi bi-pencil-square me-2"></i> Data Entry
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="opacity-25 mb-3"><i class="bi bi-table fs-1"></i></div>
+                                <h5 class="text-secondary">No tables found</h5>
+                                <p class="smaller text-muted">Waiting for structural setup from your Coordinator.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+    <style>
+        .no-caret::after { display: none !important; }
+        .glass-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary) !important;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            // Custom UI Dropdown Filtering
+            $(".filter-item").on("click", function(e) {
+                e.preventDefault();
+                
+                var value = $(this).attr("data-value");
+                var text = $(this).text();
+                
+                // Update button text
+                if (value === "") {
+                    $("#selectedFilterText").text("Filter by Table");
+                } else {
+                    $("#selectedFilterText").text(text.length > 25 ? text.substring(0, 22) + "..." : text);
+                }
+                
+                var visibleCount = 0;
+                
+                $(".table-glass tbody tr:not(#noResultsRow)").filter(function() {
+                    var tableNo = $(this).find('td:first-child span').text().trim();
+                    var match = (value === "" || tableNo === value);
+                    
+                    $(this).toggle(match);
+                    if (match) visibleCount++;
+                });
+
+                if (visibleCount === 0 && $(".table-glass tbody tr:not(#noResultsRow)").length > 0) {
+                    if ($("#noResultsRow").length === 0) {
+                        $(".table-glass tbody").append('<tr id="noResultsRow"><td colspan="4" class="text-center py-5 text-secondary"><i class="bi bi-search fs-2 opacity-50 mb-2 d-block"></i>No tables found matching your search.</td></tr>');
+                    } else {
+                        $("#noResultsRow").show();
+                    }
+                } else {
+                    $("#noResultsRow").hide();
+                }
+            });
+        });
+
+        // Interface with global offcanvas in _DashboardLayout.cshtml
+        function viewTableData(tableId, targetNo, targetName) {
+            globalViewTableData(tableId, targetNo, targetName, '@Url.Action("GetTableRecordsJson", "Faculty")');
+        }
+    </script>
+}

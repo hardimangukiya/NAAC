@@ -1,0 +1,118 @@
+@model IEnumerable<NAAC.Models.NAACTable>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Pending Documentation";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Pending Tasks</h2>
+            <p class="text-secondary small">Data submission tables that are awaiting your initial documentation</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn glass-input border-0 shadow-sm rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-medium dropdown-toggle no-caret" type="button" id="pendingFilterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-filter text-primary"></i>
+                <span id="selectedPendingFilterText" class="text-primary-dim">Filter by Table</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 glass-panel mt-2 rounded-4 p-2" aria-labelledby="pendingFilterDropdownBtn" style="min-width: 280px; max-height: 400px; overflow-y: auto;">
+                <li><a class="dropdown-item rounded-3 mb-1 filter-item" href="#" data-value="">All Pending Data</a></li>
+                @if (Model != null)
+                {
+                    @foreach (var table in Model)
+                    {
+                        <li><a class="dropdown-item rounded-3 mb-1 filter-item" href="#" data-value="@table.TableNumber">@table.TableNumber: @(table.Name.Length > 40 ? table.Name.Substring(0, 37) + "..." : table.Name)</a></li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="row g-4" id="pendingTasksContainer">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var table in Model)
+            {
+                <div class="col-md-6 pending-card" data-table-no="@table.TableNumber">
+                    <div class="glass-panel p-4 border-0 shadow-sm h-100 position-relative overflow-hidden">
+                        <div class="position-absolute top-0 end-0 p-3">
+                            <i class="bi bi-exclamation-circle text-warning fs-4"></i>
+                        </div>
+                        
+                        <span class="badge bg-warning bg-opacity-10 text-warning mb-3">Priority: Required</span>
+                        <h5 class="fw-800 mb-1">Table @table.TableNumber</h5>
+                        <p class="small text-secondary mb-4">@(table.Name.Length > 80 ? table.Name.Substring(0, 77) + "..." : table.Name)</p>
+                        
+                        <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top border-secondary border-opacity-10">
+                            <span class="smaller text-muted italic">No records found</span>
+                            <a asp-action="DataEntry" asp-route-tableId="@table.Id" class="btn btn-premium-primary btn-sm px-4 rounded-pill fw-bold">
+                                Start Documentation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 empty-state-container">
+                <div class="glass-panel p-5 text-center bg-success bg-opacity-10 border-success border-opacity-25 shadow-sm">
+                    <div class="text-success mb-3"><i class="bi bi-check-circle-fill fs-1"></i></div>
+                    <h5 class="text-success fw-bold">All Tasks Initialized!</h5>
+                    <p class="smaller text-secondary">You have started documentation for all your assigned structural tables.</p>
+                </div>
+            </div>
+        }
+        
+        <div class="col-12 d-none" id="noPendingResultsRow">
+            <div class="glass-panel p-5 text-center">
+                <div class="opacity-25 mb-3"><i class="bi bi-search fs-1"></i></div>
+                <h5 class="text-secondary">No pending tasks matching your selection</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .no-caret::after { display: none !important; }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            $(".filter-item").on("click", function(e) {
+                e.preventDefault();
+                
+                var value = $(this).attr("data-value");
+                var text = $(this).text();
+                
+                // Update button text
+                if (value === "") {
+                    $("#selectedPendingFilterText").text("Filter by Table");
+                } else {
+                    $("#selectedPendingFilterText").text(text.length > 25 ? text.substring(0, 22) + "..." : text);
+                }
+                
+                var visibleCount = 0;
+                
+                $(".pending-card").each(function() {
+                    var tableNo = $(this).attr("data-table-no");
+                    var match = (value === "" || tableNo === value);
+                    
+                    if (match) {
+                        $(this).removeClass("d-none");
+                        visibleCount++;
+                    } else {
+                        $(this).addClass("d-none");
+                    }
+                });
+
+                if (visibleCount === 0 && $(".pending-card").length > 0) {
+                    $("#noPendingResultsRow").removeClass("d-none");
+                } else {
+                    $("#noPendingResultsRow").addClass("d-none");
+                }
+            });
+        });
+    </script>
+}

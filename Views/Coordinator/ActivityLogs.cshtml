@@ -1,0 +1,300 @@
+@model IEnumerable<NAAC.Models.ActivityLog>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "System Activity Logs";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-800 mb-0">Activity Monitor</h2>
+            <p class="text-secondary small">Comprehensive audit trail of all departmental actions</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn glass-panel border-1 px-3 py-2 text-primary shadow-sm" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i> Print Log
+            </button>
+            <button class="btn btn-premium-primary px-3 py-2 shadow-sm" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-2"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Hub -->
+    <div class="glass-panel p-4 mb-5 border-0 shadow-sm">
+        <form asp-action="ActivityLogs" method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="smaller fw-bold text-uppercase text-secondary ls-1 mb-2 d-block">Search Logs</label>
+                <div class="input-group glass-input-group">
+                    <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control bg-transparent border-0" placeholder="User or details..." value="@ViewBag.SearchTerm">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="smaller fw-bold text-uppercase text-secondary ls-1 mb-2 d-block">Module</label>
+                <select name="module" class="form-select glass-input border-0 text-primary-dim shadow-none">
+                    <option value="" class="bg-dark text-white">All Modules</option>
+                    <option value="Data Entry" selected="@(ViewBag.ActiveModule == "Data Entry")" class="bg-dark text-white">Data Entry</option>
+                    <option value="Criteria" selected="@(ViewBag.ActiveModule == "Criteria")" class="bg-dark text-white">Criteria</option>
+                    <option value="Reports" selected="@(ViewBag.ActiveModule == "Reports")" class="bg-dark text-white">Reports</option>
+                    <option value="Documents" selected="@(ViewBag.ActiveModule == "Documents")" class="bg-dark text-white">Documents</option>
+                    <option value="System" selected="@(ViewBag.ActiveModule == "System")" class="bg-dark text-white">System</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="smaller fw-bold text-uppercase text-secondary ls-1 mb-2 d-block">Action Type</label>
+                <select name="actionType" id="actionType" class="form-select glass-input border-0 text-primary-dim shadow-none">
+                    <option value="" class="bg-dark text-white">All Actions</option>
+                    <!-- Options populated by JS or preserved via C# -->
+                    <option value="Added Record" data-module="Data Entry" selected="@(ViewBag.ActiveAction == "Added Record")" class="bg-dark text-white">Added Record</option>
+                    <option value="Updated Record" data-module="Data Entry" selected="@(ViewBag.ActiveAction == "Updated Record")" class="bg-dark text-white">Updated Record</option>
+                    <option value="Deleted Record" data-module="Data Entry" selected="@(ViewBag.ActiveAction == "Deleted Record")" class="bg-dark text-white">Deleted Record</option>
+                    <option value="Assigned Lead" data-module="Criteria" selected="@(ViewBag.ActiveAction == "Assigned Lead")" class="bg-dark text-white">Assigned Lead</option>
+                    <option value="Created Table" data-module="Criteria" selected="@(ViewBag.ActiveAction == "Created Table")" class="bg-dark text-white">Created Table</option>
+                    <option value="Edited Criteria" data-module="Criteria" selected="@(ViewBag.ActiveAction == "Edited Criteria")" class="bg-dark text-white">Edited Criteria</option>
+                    <option value="Generated Report" data-module="Reports" selected="@(ViewBag.ActiveAction == "Generated Report")" class="bg-dark text-white">Generated Report</option>
+                    <option value="System Initialized" data-module="System" selected="@(ViewBag.ActiveAction == "System Initialized")" class="bg-dark text-white">System Initialized</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-portal py-2 fw-bold">APPLY</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="glass-panel p-0 overflow-hidden border-0 shadow-lg">
+        <div class="table-responsive">
+            <table class="table-glass w-100 align-middle mb-0 custom-logs-table">
+                <thead>
+                    <tr class="bg-primary bg-opacity-5">
+                        <th class="ps-4">Timestamp</th>
+                        <th>User & Role</th>
+                        <th>Action & Module</th>
+                        <th>Context</th>
+                        <th>Details</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 py-4">
+                                    <div class="fw-bold text-primary-dim small">@log.Timestamp.ToString("MMM dd, yyyy")</div>
+                                    <div class="smaller text-secondary-dim">@log.Timestamp.ToString("hh:mm:ss tt")</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar-mini bg-white bg-opacity-10 text-primary-dim fw-800 rounded-pill d-flex align-items-center justify-content-center" style="width:34px; height:34px; font-size: 0.8rem; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1);">
+                                            @log.UserName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div>
+                                            <div class="small fw-800 text-primary-dim">@log.UserName</div>
+                                            <div class="smaller text-secondary-dim text-uppercase ls-1" style="font-size: 0.65rem;">@log.Role</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="badge rounded-pill @(GetActionBadgeClass(log.Action)) text-uppercase smaller mb-1 px-2 py-1">@log.Action</div>
+                                    <div class="smaller text-secondary-dim italic">Module: @log.Module</div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.Criteria))
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 small fw-bold">Crit @log.Criteria</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary-dim opacity-50 smaller">---</span>
+                                    }
+                                </td>
+                                <td style="max-width: 250px;">
+                                    <div class="small text-primary-dim text-truncate-2" title="@log.Details">@log.Details</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <span class="status-dot @(log.Status.ToLower().Contains("success") ? "bg-success" : (log.Status.ToLower().Contains("fail") ? "bg-danger" : "bg-warning"))"></span>
+                                        <span class="smaller fw-800 @(log.Status.ToLower().Contains("success") ? "text-success" : (log.Status.ToLower().Contains("fail") ? "text-danger" : "text-warning")) text-uppercase">
+                                            @log.Status
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="opacity-25 mb-4 text-primary"><i class="bi bi-clock-history display-4"></i></div>
+                                <h5 class="fw-800 text-primary-dim">No historical logs found</h5>
+                                <p class="small text-secondary-dim">System actions for @ViewBag.UserCollege will appear here as they occur.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetActionBadgeClass(string action)
+    {
+        return action.ToLower() switch
+        {
+            var a when a.Contains("added") || a.Contains("created") => "bg-success bg-opacity-10 text-success",
+            var a when a.Contains("updated") || a.Contains("edited") => "bg-primary bg-opacity-10 text-primary",
+            var a when a.Contains("deleted") => "bg-danger bg-opacity-10 text-danger",
+            var a when a.Contains("uploaded") => "bg-info bg-opacity-10 text-info",
+            _ => "bg-secondary bg-opacity-10 text-secondary"
+        };
+    }
+}
+
+<style>
+    .glass-input-group {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+    .glass-input-group:focus-within {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.1);
+    }
+    .glass-input-group i { color: #94a3b8; }
+    .glass-input-group input { color: #f8fafc !important; }
+    .glass-input-group input::placeholder { color: rgba(148, 163, 184, 0.5) !important; }
+
+    .glass-input {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        color: #f8fafc !important;
+        transition: all 0.2s;
+    }
+    .glass-input:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.1);
+        color: #f8fafc !important;
+    }
+    .custom-logs-table thead th {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border: none;
+        padding: 1.25rem 0.75rem;
+        color: var(--text-secondary);
+    }
+    .custom-logs-table tbody td {
+        padding: 1.25rem 0.75rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .italic { font-style: italic; }
+    .ls-1 { letter-spacing: 1px; }
+
+    @@media print {
+        header, .sidebar, .filter-hub, .btn, .breadcrumb, button, .mobile-top-bar, p.text-secondary { 
+            display: none !important; 
+        }
+        .dashboard-main, .animate-fade-in { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            width: 100% !important; 
+        }
+        .glass-panel { 
+            border: none !important; 
+            box-shadow: none !important; 
+            background: transparent !important;
+            padding: 0 !important;
+        }
+        body, .dashboard-main { 
+            background: white !important; 
+            color: black !important; 
+        }
+        .table-glass { 
+            width: 100% !important; 
+            border-collapse: collapse !important;
+            border: 1px solid #000 !important;
+        }
+        .table-glass thead {
+            display: table-header-group !important;
+        }
+        .table-glass th { 
+            background: #f0f0f0 !important; 
+            color: black !important; 
+            border: 1px solid #000 !important;
+            font-weight: bold !important;
+            text-transform: uppercase !important;
+        }
+        .table-glass td { 
+            border: 1px solid #ccc !important; 
+            color: black !important;
+            padding: 10px !important;
+            font-size: 10pt !important;
+        }
+        .text-primary-dim, .text-secondary-dim, .text-primary { color: black !important; }
+        .badge { 
+            border: 1px solid #000 !important; 
+            background: transparent !important; 
+            color: black !important; 
+            font-weight: bold !important;
+        }
+        .avatar-mini { display: none !important; }
+        .status-dot { border: 1px solid #000 !important; }
+        h2 { font-size: 18pt !important; margin-bottom: 20px !important; color: #000 !important; }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const moduleSelect = document.querySelector('select[name="module"]');
+        const actionSelect = document.getElementById("actionType");
+        const actionOptions = Array.from(actionSelect.options);
+
+        function updateActions() {
+            const selectedModule = moduleSelect.value;
+            const currentActionValue = actionSelect.value;
+            
+            actionSelect.innerHTML = "";
+            const allOption = actionOptions.find(opt => opt.value === "");
+            actionSelect.appendChild(allOption.cloneNode(true));
+
+            actionOptions.forEach(opt => {
+                if (opt.value === "") return;
+                const optModule = opt.getAttribute("data-module");
+                if (!selectedModule || optModule === selectedModule) {
+                    const newOpt = opt.cloneNode(true);
+                    if (opt.value === currentActionValue) newOpt.selected = true;
+                    actionSelect.appendChild(newOpt);
+                }
+            });
+        }
+
+        moduleSelect.addEventListener("change", updateActions);
+        if (moduleSelect.value) updateActions();
+    });
+</script>

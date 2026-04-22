@@ -1,0 +1,207 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Finalization Queue";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <div class="mb-5">
+        <h2 class="fw-800 mb-0">Finalization Queue</h2>
+        <p class="text-secondary small">Review records verified by HOD and provide final structural sign-off.</p>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="glass-panel p-5 text-center shadow-lg border-0">
+            <div class="stat-icon bg-success bg-opacity-10 text-success mx-auto mb-4" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <h4 class="fw-bold">Queue is Empty</h4>
+            <p class="text-secondary">No records are currently pending finalization from HOD approval.</p>
+            <a href="@Url.Action("Dashboard")" class="btn btn-portal rounded-pill px-4 mt-3">Back to Dashboard</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var record in Model)
+            {
+                var dataDict = new Dictionary<string, string>();
+                try { dataDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(record.JsonData ?? "{}") ?? new Dictionary<string, string>(); } catch { }
+
+                <div class="col-12" id="record-card-@record.Id">
+                    <div class="glass-panel p-4 shadow-sm border-0 border-start border-4 border-primary position-relative overflow-hidden card-hover" 
+                         style="cursor: pointer;" onclick="viewFullDetails(@record.Id)">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-bold">Table @record.Table?.TableNumber</span>
+                                    <span class="text-secondary small"><i class="bi bi-person me-1"></i> @record.Faculty?.FullName (@record.AcademicYear)</span>
+                                </div>
+                                <h5 class="fw-bold mb-3">@record.Table?.Name</h5>
+                                
+                                <div class="row g-2">
+                                    @foreach (var entry in dataDict.Take(4))
+                                    {
+                                        <div class="col-md-6 col-lg-3">
+                                            <div class="p-2 rounded bg-light bg-opacity-10 border border-secondary border-opacity-10">
+                                                <div class="smaller text-secondary-dim text-truncate">@entry.Key</div>
+                                                <div class="small fw-bold text-truncate">@(string.IsNullOrEmpty(entry.Value) ? "-" : entry.Value)</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Hidden full data for modal -->
+                                <div id="full-data-@record.Id" class="d-none" 
+                                     data-title="@record.Table?.Name" 
+                                     data-faculty="@record.Faculty?.FullName"
+                                     data-ay="@record.AcademicYear">
+                                    @Html.Raw(record.JsonData)
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end mt-4 mt-md-0">
+                                <div class="d-flex flex-column gap-2" onclick="event.stopPropagation()">
+                                    <button class="btn btn-success rounded-pill py-2 fw-bold shadow-sm" onclick="finalizeRecord(@record.Id)">
+                                        <i class="bi bi-check-circle me-2"></i> Finalize Report
+                                    </button>
+                                    <button class="btn btn-outline-danger rounded-pill py-2 fw-bold" onclick="rejectRecord(@record.Id)">
+                                        <i class="bi bi-x-circle me-2"></i> Reject to Faculty
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Details Offcanvas -->
+<div class="offcanvas offcanvas-end glass-panel border-0 border-start border-primary border-opacity-25 shadow-lg" tabindex="-1" id="detailsOffcanvas" style="width: 500px; background: var(--card-bg) !important;">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-10 p-4">
+        <div>
+            <h5 class="offcanvas-title fw-800 mb-0" id="offcanvasTitle" style="color: var(--text-primary);">Record Details</h5>
+            <p class="text-secondary small mb-0" id="offcanvasSubTitle" style="color: var(--text-secondary);"></p>
+        </div>
+        <button type="button" class="btn-close btn-close-white opacity-50" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-4" id="offcanvasContent">
+        <!-- Content injected via JS -->
+    </div>
+    <div class="offcanvas-footer p-4 border-top border-secondary border-opacity-10 bg-light bg-opacity-5">
+        <div class="d-grid gap-2" id="offcanvasActions">
+            <!-- Buttons injected via JS -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateX(8px); background: rgba(var(--accent-rgb), 0.05); }
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.7; }
+    [data-theme="dark"] .text-secondary-dim { color: #94a3b8; }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function viewFullDetails(id) {
+            const dataElem = document.getElementById(`full-data-${id}`);
+            const jsonData = JSON.parse(dataElem.textContent);
+            const title = dataElem.getAttribute('data-title');
+            const faculty = dataElem.getAttribute('data-faculty');
+            const ay = dataElem.getAttribute('data-ay');
+
+            document.getElementById('offcanvasTitle').textContent = title;
+            document.getElementById('offcanvasSubTitle').textContent = `${faculty} | ${ay}`;
+
+            let html = '<div class="space-y-4">';
+            for (let [key, value] of Object.entries(jsonData)) {
+                html += `
+                    <div class="mb-4 pb-3 border-bottom border-secondary border-opacity-10">
+                        <div class="smaller text-secondary-dim text-uppercase fw-bold ls-1 mb-2">${key}</div>
+                        <div class="fw-bold" style="color: var(--text-primary); word-break: break-all;">${value || '-'}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            document.getElementById('offcanvasContent').innerHTML = html;
+
+            document.getElementById('offcanvasActions').innerHTML = `
+                <button class="btn btn-success rounded-pill py-2 fw-bold" onclick="finalizeRecord(${id}); bootstrap.Offcanvas.getInstance(document.getElementById('detailsOffcanvas')).hide();">
+                    <i class="bi bi-check-circle me-2"></i> Finalize Now
+                </button>
+                <button class="btn btn-outline-danger rounded-pill py-2 fw-bold" onclick="rejectRecord(${id}); bootstrap.Offcanvas.getInstance(document.getElementById('detailsOffcanvas')).hide();">
+                    <i class="bi bi-x-circle me-2"></i> Reject to Faculty
+                </button>
+            `;
+
+            const bsOffcanvas = new bootstrap.Offcanvas(document.getElementById('detailsOffcanvas'));
+            bsOffcanvas.show();
+        }
+
+        async function finalizeRecord(id) {
+            const result = await Swal.fire({
+                title: 'Finalize Record?',
+                text: "This will lock the record as part of the official NAAC documentation.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, Finalize it!',
+                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#fff',
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#f8fafc' : '#1e293b'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('@Url.Action("FinalizeRecord", "Coordinator")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `id=${id}`
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Finalized!', data.message, 'success');
+                        $(`#record-card-${id}`).fadeOut();
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Action failed', 'error');
+                }
+            }
+        }
+
+        async function rejectRecord(id) {
+            const { value: remarks } = await Swal.fire({
+                title: 'Reject to Faculty',
+                input: 'textarea',
+                inputLabel: 'Reason for rejection',
+                inputPlaceholder: 'Type your feedback here...',
+                inputAttributes: { 'aria-label': 'Type your feedback here' },
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#fff',
+                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#f8fafc' : '#1e293b'
+            });
+
+            if (remarks) {
+                try {
+                    const response = await fetch('@Url.Action("RejectRecord", "Coordinator")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `id=${id}&remarks=${encodeURIComponent(remarks)}`
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Rejected', data.message, 'success');
+                        $(`#record-card-${id}`).fadeOut();
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Action failed', 'error');
+                }
+            }
+        }
+    </script>
+}

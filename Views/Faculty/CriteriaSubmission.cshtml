@@ -1,0 +1,221 @@
+@model List<NAAC.Models.CriteriaAssignment>
+@{
+    ViewData["Title"] = "Institutional Data Submission";
+    Layout = "_DashboardLayout";
+    var tables = ViewBag.Tables as List<NAAC.Models.NAACTable>;
+}
+
+<div class="container-fluid py-4 min-vh-100">
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="fw-800 text-main mb-2">Institutional Data Repository</h2>
+            <p class="text-subtitle">Fill and submit assigned criteria data as per the structured NAAC manual.</p>
+        </div>
+    </div>
+
+    @foreach (var assignment in Model)
+    {
+        <div class="criteria-card mb-5 animate-fade-in">
+            <div class="criteria-header p-4 rounded-top-4 bg-accent bg-opacity-10 border-start border-4 border-accent">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-accent text-white px-3 py-2 rounded-pill mb-2">Criteria @assignment.Criteria?.Number</span>
+                        <h4 class="fw-bold text-main mb-0">@assignment.Criteria?.Title</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-theme-panel p-4 rounded-bottom-4 border-theme border-top-0">
+                @if (tables != null && tables.Any(t => t.CriteriaId == assignment.CriteriaId))
+                {
+                    foreach (var table in tables.Where(t => t.CriteriaId == assignment.CriteriaId))
+                    {
+                        <div class="structural-entry-card mb-4 p-4 rounded-4 bg-dark bg-opacity-5 border border-theme">
+                            <div class="mb-4">
+                                <h5 class="fw-bold text-accent mb-1"><i class="bi bi-table me-2"></i>Table @table.TableNumber: @table.Name</h5>
+                                <p class="small text-subtitle italic">@table.Description</p>
+                            </div>
+
+                            <form class="dynamic-entry-form" id="form-@table.Id" data-table-id="@table.Id">
+                                <div class="row g-4 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="small fw-bold text-accent mb-2 d-block">Academic Session</label>
+                                            <select name="AcademicYear" class="form-control-custom fw-bold" required>
+                                                <option value="2023-24">2023-24</option>
+                                                <option value="2024-25" selected>2024-25</option>
+                                                <option value="2025-26">2025-26</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-4">
+                                    @foreach (var col in table.Columns.OrderBy(c => c.Order))
+                                    {
+                                        <div class="col-md-6 col-lg-4 entry-field-wrapper" 
+                                             data-col-id="@col.Id"
+                                             data-depends-on="@col.DependsOnColumnId"
+                                             data-trigger-value="@col.DependsOnValue"
+                                             style="@(col.DependsOnColumnId != null ? "display:none;" : "")">
+                                            
+                                            <div class="form-group mb-3">
+                                                <label class="small fw-bold text-subtitle mb-2 d-block">
+                                                    @col.HeaderName
+                                                    @if (!string.IsNullOrEmpty(col.Description))
+                                                    {
+                                                        <i class="bi bi-info-circle ms-1 cursor-help" data-bs-toggle="tooltip" title="@col.Description"></i>
+                                                    }
+                                                </label>
+
+                                                @if (col.DataType == "Text")
+                                                {
+                                                    <input type="text" name="FormData[@col.HeaderName]" class="form-control-custom entry-input" placeholder="Enter @col.HeaderName">
+                                                }
+                                                else if (col.DataType == "Number")
+                                                {
+                                                    <input type="number" name="FormData[@col.HeaderName]" class="form-control-custom entry-input" placeholder="0">
+                                                }
+                                                else if (col.DataType == "Year")
+                                                {
+                                                    <input type="number" min="1950" max="2100" name="FormData[@col.HeaderName]" class="form-control-custom entry-input" value="@DateTime.Now.Year">
+                                                }
+                                                else if (col.DataType == "Date")
+                                                {
+                                                    <input type="date" name="FormData[@col.HeaderName]" class="form-control-custom entry-input">
+                                                }
+                                                else if (col.DataType == "Dropdown")
+                                                {
+                                                    <select name="FormData[@col.HeaderName]" class="form-control-custom entry-input dropdown-trigger" data-col-id="@col.Id" onchange="handleDependency(this)">
+                                                        <option value="">-- Choose Option --</option>
+                                                        @if (!string.IsNullOrEmpty(col.DropdownOptions))
+                                                        {
+                                                            foreach (var option in col.DropdownOptions.Split(','))
+                                                            {
+                                                                <option value="@option.Trim()">@option.Trim()</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-4 text-end">
+                                    <button type="button" class="btn btn-primary px-5 rounded-pill fw-bold bg-accent border-0 shadow" onclick="saveData('@table.Id')">
+                                        <i class="bi bi-cloud-arrow-up me-2"></i>Submit Record
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-clipboard-x display-1 text-subtitle opacity-25"></i>
+                        <p class="mt-3 text-subtitle">No structural tables defined for @assignment.Criteria?.Number yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+            
+            $('.dropdown-trigger').each(function() {
+                handleDependency(this);
+            });
+        });
+
+        function handleDependency(select) {
+            const colId = $(select).data('col-id');
+            const selectedValue = $(select).val();
+            
+            $(`.entry-field-wrapper[data-depends-on="${colId}"]`).each(function() {
+                const triggerValue = $(this).data('trigger-value');
+                
+                if (selectedValue === triggerValue && selectedValue !== "") {
+                    $(this).fadeIn(300);
+                } else {
+                    $(this).fadeOut(200);
+                    // Clear the value of newly hidden fields
+                    $(this).find('input, select').val('');
+                }
+            });
+        }
+
+        function saveData(tableId) {
+            const form = $(`#form-${tableId}`);
+            
+            $.ajax({
+                url: '/Faculty/SaveRecord',
+                type: 'POST',
+                data: form.serialize() + `&TableId=${tableId}`,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Data Captured!',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonColor: 'var(--accent-color)'
+                        }).then(() => {
+                            // Clear form or refresh
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Failed to communicate with the registry. Please check your connection.', 'error');
+                }
+            });
+        }
+    </script>
+}
+
+<style>
+    .cursor-help { cursor: help; }
+    .text-main { color: var(--text-primary); }
+    .text-subtitle { color: var(--text-secondary); }
+    .text-accent { color: var(--accent-color) !important; }
+    .bg-theme-panel { background: var(--secondary-color); }
+    .border-theme { border-color: var(--glass-border) !important; }
+    .italic { font-style: italic; }
+
+    .criteria-card {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    [data-theme='dark'] .criteria-card {
+        background: #1e293b;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .form-control-custom {
+        width: 100%;
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(255,255,255,0.02);
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .form-control-custom:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.1);
+        outline: none;
+    }
+
+    [data-theme='dark'] .form-control-custom {
+        background: #0f172a;
+        color: white;
+    }
+</style>

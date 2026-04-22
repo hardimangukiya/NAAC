@@ -1,0 +1,239 @@
+@model IEnumerable<NAAC.Models.CriteriaAssignment>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Assign Criteria";
+}
+
+<div class="animate-fade-in px-4">
+    <!-- Horizontal Assignment Form -->
+    <div class="glass-panel p-4 mb-5 shadow-lg border-opacity-10" style="border-radius: 20px;">
+        <div class="row align-items-center g-3">
+            <div class="col-xl-3">
+                <h5 class="mb-1 fw-800">Assign Criteria</h5>
+                <p class="text-secondary smaller mb-0">Map one faculty member to one unique criterion.</p>
+            </div>
+            <div class="col-xl-9">
+                <form id="assignTaskForm" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label smaller fw-bold text-uppercase text-secondary ls-1">Select Faculty</label>
+                        <select name="facultyId" id="facultyId" class="form-select form-control-custom shadow-sm" required>
+                            <option value="">-- Available Faculty --</option>
+                            @foreach (var faculty in ViewBag.FacultyList)
+                            {
+                                <option value="@faculty.Id">@faculty.FullName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label smaller fw-bold text-uppercase text-secondary ls-1">Select Criterion</label>
+                        <select name="criteriaId" id="criteriaId" class="form-select form-control-custom shadow-sm" required>
+                            <option value="">-- Available Criteria --</option>
+                            @foreach (var crit in ViewBag.CriteriaList)
+                            {
+                                <option value="@crit.Id">@crit.Number: @crit.Title</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-portal w-100 py-2-5 fw-bold shadow-sm">
+                            <i class="bi bi-link-45deg me-1"></i> Confirm Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments List with Filtering -->
+    <div class="glass-panel p-5 shadow-lg" style="border-radius: 24px;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+            <div>
+                <h3 class="mb-1 fw-800">Active Assignments</h3>
+                <p class="text-secondary small mb-0">Total @Model.Count() faculty member(s) currently mapped</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap" style="min-width: 400px;">
+                <select id="facultyFilter" class="btn glass-panel border-1 px-3 py-2 small fw-bold text-start" style="min-width: 180px;">
+                    <option value="">-- Filter by Faculty --</option>
+                    @foreach (var faculty in ((IEnumerable<NAAC.Models.User>)ViewBag.FacultyList).OrderBy(f => f.FullName))
+                    {
+                        <option value="@faculty.FullName.ToLower()">@faculty.FullName</option>
+                    }
+                </select>
+
+                <select id="criteriaFilter" class="btn glass-panel border-1 px-3 py-2 small fw-bold text-start" style="min-width: 180px;">
+                    <option value="">-- Filter by Criteria --</option>
+                    @foreach (var crit in ((IEnumerable<NAAC.Models.Criteria>)ViewBag.CriteriaList).OrderBy(c => c.Number))
+                    {
+                        <option value="@crit.Number.ToLower()">Crit-@crit.Number</option>
+                    }
+                </select>
+
+                <button id="resetFilters" class="btn btn-outline-secondary border-0 btn-sm rounded-circle" title="Reset Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table-glass w-100" id="assignmentsTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">FACULTY MEMBER</th>
+                        <th>ASSIGNED CRITERION</th>
+                        <th>DATE ASSIGNED</th>
+                        <th class="text-end pe-4">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody id="assignmentTableBody">
+                    @foreach (var assignment in Model)
+                    {
+                        <tr class="align-middle border-bottom border-light border-opacity-10">
+                            <td class="ps-4 py-4">
+                                <div class="fw-bold text-primary faculty-name">@assignment.Faculty?.FullName</div>
+                                <div class="smaller text-secondary">@assignment.Faculty?.Email</div>
+                            </td>
+                            <td>
+                                <div class="user-badge badge-admin d-inline-block mb-1 px-3 py-1 criteria-num">
+                                    @assignment.Criteria?.Number
+                                </div>
+                                <div class="small fw-medium text-dark criteria-title">@assignment.Criteria?.Title</div>
+                            </td>
+                            <td>
+                                <div class="smaller text-secondary"><i class="bi bi-calendar-event me-1"></i> @assignment.AssignedDate.ToString("MMM dd, yyyy")</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill border-0 px-3 py-2 unassign-btn" data-id="@assignment.Id">
+                                    <i class="bi bi-x-circle me-1"></i> Unassign
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="opacity-10 mb-3 mt-4">
+                                    <i class="bi bi-diagram-3-fill" style="font-size: 5rem;"></i>
+                                </div>
+                                <p class="text-secondary fw-medium">No criteria assignments have been made yet.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Dual Dropdown Filtering
+            function filterAssignments() {
+                var fVal = $("#facultyFilter").val();
+                var cVal = $("#criteriaFilter").val();
+
+                $("#assignmentTableBody tr").each(function() {
+                    var rowText = $(this).text().toLowerCase();
+                    var show = true;
+                    
+                    if (fVal && rowText.indexOf(fVal) === -1) show = false;
+                    if (cVal && rowText.indexOf(cVal) === -1) show = false;
+
+                    $(this).toggle(show);
+                });
+            }
+
+            $("#facultyFilter, #criteriaFilter").on("change", filterAssignments);
+
+            $("#resetFilters").on("click", function() {
+                $("#facultyFilter, #criteriaFilter").val("");
+                $("#assignmentTableBody tr").show();
+            });
+
+            // Create Assignment
+            $('#assignTaskForm').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/HOD/AssignCriterion',
+                    type: 'POST',
+                    data: {
+                        facultyId: $('#facultyId').val(),
+                        criteriaId: $('#criteriaId').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Assigned Successfully',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => window.location.reload());
+                        } else {
+                            Swal.fire('Error', response.message, 'warning');
+                        }
+                    }
+                });
+            });
+
+            // Unassign Handler
+            $('.unassign-btn').on('click', function() {
+                const id = $(this).data('id');
+                const name = $(this).closest('tr').find('.faculty-name').text();
+                const criteria = $(this).closest('tr').find('.criteria-num').text();
+
+                Swal.fire({
+                    title: 'Remove Assignment?',
+                    text: `Are you sure you want to unassign ${criteria} from ${name}?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, Unassign'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/HOD/UnassignCriterion',
+                            type: 'POST',
+                            data: { id: id },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire('Action Completed', response.message, 'success').then(() => window.location.reload());
+                                } else {
+                                    Swal.fire('Error', response.message, 'error');
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    .py-2-5 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .ls-1 { letter-spacing: 1px; }
+    .badge-admin { background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); }
+    .search-box-container input:focus { outline: none; box-shadow: none; }
+    
+    /* Dropdown Dark Mode Fix */
+    #facultyFilter option, #criteriaFilter option {
+        background-color: var(--card-bg, #ffffff);
+        color: var(--text-primary, #1e293b);
+    }
+    
+    [data-theme="dark"] #facultyFilter option,
+    [data-theme="dark"] #criteriaFilter option {
+        background-color: #1e293b;
+        color: #f8fafc;
+    }
+
+    [data-theme="dark"] #facultyFilter, 
+    [data-theme="dark"] #criteriaFilter {
+        color: #f8fafc !important;
+        border-color: rgba(255,255,255,0.2) !important;
+    }
+</style>

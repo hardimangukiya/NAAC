@@ -1,0 +1,170 @@
+@model List<Dictionary<string, object>>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = $"Table: {ViewBag.TableName}";
+    var columns = (List<string>)ViewBag.Columns;
+    var tableName = (string)ViewBag.TableName;
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-4">
+        <div class="d-flex align-items-center gap-3">
+            <a asp-action="SystemReports" class="btn btn-icon glass-panel rounded-circle text-secondary shadow-sm hover-scale">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-800 mb-0 d-flex align-items-center gap-2">
+                    <span class="text-secondary opacity-50">#</span> @tableName
+                </h2>
+                <p class="text-secondary small mb-0">Raw record management and data integrity audit</p>
+            </div>
+        </div>
+        <div class="d-flex gap-3 align-items-center">
+            <div id="exportActionContainer" class="d-flex gap-2 me-3"></div>
+            <div class="glass-panel px-4 py-2 border-0 shadow-sm">
+                <span class="text-secondary smaller fw-bold ls-1 text-uppercase me-2">ROW COUNT:</span>
+                <span class="text-primary fw-800">@Model.Count</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Data Grid -->
+    <div class="glass-panel shadow-lg border-0 overflow-hidden mb-5">
+        <div class="table-responsive" style="max-height: 700px;">
+            <table class="table-glass w-100 mb-0">
+                <thead class="sticky-top bg-dark" style="z-index: 10;">
+                    <tr>
+                        <th class="ps-4" style="width: 80px;">Actions</th>
+                        @foreach (var col in columns)
+                        {
+                            <th>@col</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var row in Model)
+                        {
+                            var rowId = row.ContainsKey("Id") ? row["Id"].ToString() : 
+                                       row.ContainsKey("id") ? row["id"].ToString() : "N/A";
+
+                            <tr id="row-@rowId">
+                                <td class="ps-4">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-icon text-danger bg-danger bg-opacity-10 rounded-3 border-0" onclick="deleteRow('@tableName', '@rowId')">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                @foreach (var col in columns)
+                                {
+                                    <td class="font-monospace smaller py-3 text-secondary-dim">
+                                        <div class="text-truncate" style="max-width: 200px;" title="@row[col]">@row[col]</div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="@(columns.Count + 1)" class="text-center py-5 opacity-50">
+                                <i class="bi bi-database-exclamation fs-1 d-block mb-3"></i>
+                                <span>No available datasets found for this structural entity.</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-800 { font-weight: 800; }
+    .ls-1 { letter-spacing: 1px; }
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.8; }
+    [data-theme="dark"] .text-main { color: #f1f5f9; }
+    .table-glass th { background: rgba(15, 23, 42, 0.9) !important; color: #38bdf8 !important; }
+    .table-glass td { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+</style>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" />
+    
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var table = $('.table-glass').DataTable({
+                dom: 'Brtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        className: 'btn btn-sm btn-success rounded-pill px-3 fw-bold border-0 bg-success bg-opacity-10 text-success',
+                        text: '<i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel',
+                        title: 'Repository_Export_' + '@tableName',
+                        exportOptions: { columns: ':not(:first-child)' }
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        className: 'btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 bg-danger bg-opacity-10 text-danger',
+                        text: '<i class="bi bi-file-earmark-pdf me-1"></i> PDF',
+                        title: 'Repository_Export_' + '@tableName',
+                        orientation: 'landscape',
+                        pageSize: 'A4',
+                        exportOptions: { columns: ':not(:first-child)' }
+                    }
+                ],
+                pageLength: 50,
+                language: { search: "", searchPlaceholder: "Filter records..." }
+            });
+
+            table.buttons().container().appendTo('#exportActionContainer');
+        });
+
+        async function deleteRow(table, id) {
+            if (id === "N/A") { alert("This table does not have a standard 'Id' column for deletion."); return; }
+            if (!confirm(`Are you sure you want to delete record #${id} from ${table}?`)) return;
+
+            const sql = `DELETE FROM ${table} WHERE id = ${id}`;
+            try {
+                const response = await fetch('/Admin/ExecuteQuery', {
+                    method: 'POST',
+                    body: new URLSearchParams({ sql: sql }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                const result = await response.json();
+                if (result.success) location.reload(); else alert(result.message);
+            } catch (error) {
+                alert("Operation failed");
+            }
+        }
+
+        async function executeRaw(sql) {
+            try {
+                const response = await fetch('/Admin/ExecuteQuery', {
+                    method: 'POST',
+                    body: new URLSearchParams({ sql: sql }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+                const result = await response.json();
+                if (result.success) location.reload(); else alert(result.message);
+            } catch (error) {
+                alert("Operation failed");
+            }
+        }
+    </script>
+}

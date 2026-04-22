@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Portal Hub";
+}
+
+<section class="hero-section">
+    <div class="container px-4">
+        <h1 class="hero-title animate-fade-in">NAAC Management System</h1>
+        <p class="hero-subtitle animate-fade-in delay-1">
+            Empowering institutional excellence through streamlined NAAC Criteria 5 & 6 management. 
+            A unified platform for data collection, verification, and accreditation compliance.
+        </p>
+    </div>
+</section>
+
+<section id="roles" class="pb-5">
+    <div class="container px-4">
+        <div class="role-grid">
+            <!-- HOD Portal -->
+            <div class="glass-panel role-card animate-fade-in delay-2">
+                <div>
+                    <div class="role-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <h3 class="role-name">HOD Portal</h3>
+                    <p class="role-description">
+                        Manage your department's accreditation progress. Register, add Faculty and Admins, 
+                        assign criteria responsibilities, and oversee all recorded data. 
+                        Export comprehensive reports in Excel or PDF formats.
+                    </p>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <a asp-controller="Account" asp-action="Register" class="btn-portal">Register as HOD</a>
+                    <a asp-controller="Account" asp-action="Login" class="btn-portal" style="background: var(--secondary-color); color: var(--text-primary);">HOD Login</a>
+                </div>
+            </div>
+
+            <!-- Admin Portal -->
+            <div class="glass-panel role-card animate-fade-in delay-2">
+                <div>
+                    <div class="role-icon">
+                        <i class="bi bi-person-gear"></i>
+                    </div>
+                    <h3 class="role-name">Admin Portal</h3>
+                    <p class="role-description">
+                        Dedicated management of student-centric records. Handle all scholarship details, 
+                        freeship cards, and related student information essential for NAAC compliance.
+                    </p>
+                </div>
+                <a asp-controller="Account" asp-action="Login" class="btn-portal">Admin Login</a>
+            </div>
+
+            <!-- Faculty Portal -->
+            <div class="glass-panel role-card animate-fade-in delay-3">
+                <div>
+                    <div class="role-icon">
+                        <i class="bi bi-person-workspace"></i>
+                    </div>
+                    <h3 class="role-name">Faculty Portal</h3>
+                    <p class="role-description">
+                        Focus on your assigned criteria. Efficiently manage and update data tables 
+                        specific to your designated NAAC criteria as assigned by your HOD.
+                    </p>
+                </div>
+                <a asp-controller="Account" asp-action="Login" class="btn-portal">Faculty Login</a>
+            </div>
+
+            <!-- NAAC Coordinator Portal -->
+            <div class="glass-panel role-card animate-fade-in delay-3">
+                <div>
+                    <div class="role-icon">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                    <h3 class="role-name">Coordinator Portal</h3>
+                    <p class="role-description">
+                        System-wide architectural oversight. Monitor faculty assignments across all criteria, 
+                        review uploaded records, and dynamic create or modify criteria and data tables.
+                    </p>
+                </div>
+                <a asp-controller="Account" asp-action="Login" class="btn-portal">Coordinator Login</a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section class="py-5 text-center">
+    <div class="container px-4">
+        <div class="glass-panel p-5 animate-fade-in delay-3 feature-banner">
+            <h2 class="mb-4">Standardizing Accreditation Workflows</h2>
+            <p class="text-secondary mb-0 mx-auto" style="max-width: 800px;">
+                Designed to simplify the complex task of NAAC documentation, our system ensures that every 
+                department maintains a rigorous standard of data integrity and accessibility.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+

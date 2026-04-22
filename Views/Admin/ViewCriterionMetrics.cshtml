@@ -1,0 +1,293 @@
+@model IEnumerable<NAAC.Models.DataRecord>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Criterion Metrics";
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    <!-- Header with Back Button -->
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-4">
+            <a asp-action="Criteria" class="btn-back-dynamic shadow-sm">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill smaller fw-bold ls-1 text-uppercase mb-2 d-inline-block">ADMIN AUDIT MODE</span>
+                <h2 class="fw-800 mb-0">@ViewBag.CriterionName</h2>
+                <p class="text-secondary small mb-0 mt-1">
+                    <i class="bi bi-info-circle me-1"></i> System-wide data point audit and verification status
+                </p>
+            </div>
+        </div>
+        <div class="glass-panel px-4 py-3 border-0 shadow-lg d-flex align-items-center gap-3">
+            <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3">
+                <i class="bi bi-database-check fs-4"></i>
+            </div>
+            <div>
+                <div class="text-secondary smaller fw-bold ls-1 text-uppercase">Total Records</div>
+                <div class="h4 mb-0 fw-800 text-primary">@Model.Count()</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="glass-panel p-4 border-0 shadow-sm status-card-hover border-start border-success border-4 h-100">
+                <div class="smaller text-secondary text-uppercase fw-bold ls-1 mb-2">Verified</div>
+                <div class="d-flex align-items-end gap-2">
+                    <span class="h3 mb-0 fw-800">@Model.Count(r => r.Status == "Verified")</span>
+                    <span class="small text-success mb-1">Records</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-panel p-4 border-0 shadow-sm status-card-hover border-start border-warning border-4 h-100">
+                <div class="smaller text-secondary text-uppercase fw-bold ls-1 mb-2">Pending Audit</div>
+                <div class="d-flex align-items-end gap-2">
+                    <span class="h3 mb-0 fw-800">@Model.Count(r => r.Status == "Submitted")</span>
+                    <span class="small text-warning mb-1">Waiting</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-panel p-4 border-0 shadow-sm status-card-hover border-start border-danger border-4 h-100">
+                <div class="smaller text-secondary text-uppercase fw-bold ls-1 mb-2">Rejected</div>
+                <div class="d-flex align-items-end gap-2">
+                    <span class="h3 mb-0 fw-800">@Model.Count(r => r.Status == "Rejected")</span>
+                    <span class="small text-danger mb-1">Items</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Table Section -->
+    <div class="glass-panel p-0 overflow-hidden shadow-lg border-0 mb-5">
+        <div class="p-4 border-bottom border-white border-opacity-10 d-flex justify-content-between align-items-center bg-secondary bg-opacity-5">
+            <h5 class="mb-0 fw-bold">Institutional Data Stream</h5>
+            <div class="d-flex gap-2">
+                <div class="bg-primary bg-opacity-10 rounded-pill px-3 py-1 smaller text-primary fw-bold">
+                    <i class="bi bi-broadcast me-1"></i> LIVE FEED
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table-premium w-100">
+                <thead>
+                    <tr>
+                        <th class="ps-5">Institution Source</th>
+                        <th>Metric Target</th>
+                        <th>Submission Metadata</th>
+                        <th class="text-end pe-5">Audit Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        int index = 0;
+                        foreach (var record in Model)
+                        {
+                            index++;
+                            <tr class="stagger-item" style="--item-index: @index">
+                                <td class="ps-5 py-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="avatar-sm bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-primary shadow-sm border border-primary border-opacity-25">
+                                            <i class="bi bi-bank2"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-main">@record.Faculty?.CollegeName</div>
+                                            <div class="smaller text-secondary d-flex align-items-center gap-1">
+                                                <i class="bi bi-person-badge"></i> @record.Faculty?.FullName
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <div class="badge-modern">
+                                            <span class="label">TABLE</span>
+                                            <span class="value">@record.Table?.TableNumber</span>
+                                        </div>
+                                        <div class="smaller text-secondary-dim mt-1 fw-medium">
+                                            <i class="bi bi-calendar3 me-1"></i> A.Y. @record.AcademicYear
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold text-main">@record.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                    <div class="smaller text-secondary-dim font-monospace">DX-@record.Id.ToString("D4")</div>
+                                </td>
+                                <td class="text-end pe-5">
+                                    @{
+                                        var statusClass = record.Status switch {
+                                            "Verified" => "status-verified",
+                                            "Submitted" => "status-pending",
+                                            "Rejected" => "status-rejected",
+                                            _ => "status-other"
+                                        };
+                                        var icon = record.Status switch {
+                                            "Verified" => "bi-check-circle-fill",
+                                            "Submitted" => "bi-clock-history",
+                                            "Rejected" => "bi-x-circle-fill",
+                                            _ => "bi-dash-circle"
+                                        };
+                                    }
+                                    <div class="status-badge-container @statusClass shadow-sm px-4 py-2">
+                                        <i class="bi @icon"></i>
+                                        <span>@record.Status</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5 opacity-50">
+                                <div class="empty-state-container py-5">
+                                    <i class="bi bi-database-exclamation fs-1 mb-3 d-block text-secondary"></i>
+                                    <h5 class="fw-bold">No Records Found</h5>
+                                    <p class="small text-secondary mx-auto" style="max-width: 300px;">Institutional records for this criterion will appear here once submitted.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Premium Header */
+    .btn-back-dynamic {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-back-dynamic:hover {
+        background: var(--accent-color);
+        color: white;
+        transform: translateX(-5px);
+        box-shadow: 0 10px 20px -5px rgba(13, 110, 253, 0.3);
+    }
+
+    /* Premium Table Styling */
+    .table-premium {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .table-premium thead th {
+        padding: 1.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--glass-border);
+        background: rgba(var(--accent-rgb, 79, 70, 229), 0.02);
+    }
+    .table-premium tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .table-premium tbody tr:hover {
+        background: rgba(100, 100, 100, 0.03);
+    }
+    .table-premium tbody td {
+        vertical-align: middle;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    /* Badge Modern */
+    .badge-modern {
+        display: inline-flex;
+        align-items: center;
+        background: var(--secondary-color);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        font-size: 0.7rem;
+        font-weight: 800;
+        width: fit-content;
+    }
+    .badge-modern .label {
+        background: var(--accent-color);
+        color: white;
+        padding: 2px 6px;
+        font-size: 0.65rem;
+    }
+    .badge-modern .value {
+        padding: 2px 8px;
+        color: var(--text-primary);
+    }
+
+    /* Status Badges */
+    .status-badge-container {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+    }
+    .status-verified {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.2);
+    }
+    .status-pending {
+        background: rgba(234, 179, 8, 0.1);
+        color: #eab308;
+        border-color: rgba(234, 179, 8, 0.2);
+    }
+    .status-rejected {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* Staggered Animations */
+    .stagger-item {
+        opacity: 0;
+        transform: translateY(15px);
+        animation: staggerIn 0.5s ease forwards;
+        animation-delay: calc(var(--item-index) * 0.08s);
+    }
+    @@keyframes staggerIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .status-card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .status-card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1) !important;
+    }
+
+    .fw-800 { font-weight: 800; }
+    .ls-1 { letter-spacing: 1px; }
+    .text-main { color: var(--text-primary); }
+    .text-secondary-dim { color: var(--text-secondary); opacity: 0.8; }
+    .avatar-sm { width: 40px; height: 40px; font-size: 1.1rem; }
+    
+    [data-theme="dark"] .text-main { color: #f1f5f9; }
+    [data-theme="dark"] .badge-modern .value { color: #fff; background: #1e293b; }
+</style>

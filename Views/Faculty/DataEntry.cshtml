@@ -1,0 +1,577 @@
+@model NAAC.Models.NAACTable
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = Model?.Name ?? "Entry Center";
+
+    var existingRecord = ViewBag.ExistingRecord as NAAC.Models.DataRecord;
+    var existingData = new Dictionary<string, string>();
+    if (existingRecord != null)
+    {
+        try { existingData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(existingRecord.JsonData) ?? new Dictionary<string, string>(); } catch { }
+    }
+}
+
+<div class="animate-fade-in px-2 px-md-0">
+    @if (Model == null)
+    {
+        <!-- [Selection Screen] - High Fidelity Grid -->
+        <div class="mb-5 text-center">
+            <h1 class="fw-800 display-5 mb-2">Institutional Documentation</h1>
+            <p class="text-secondary lead">Select an structural table to initiate high-fidelity data entry</p>
+        </div>
+
+        <div class="row g-4 pt-4">
+            @if (ViewBag.AvailableTables != null && ((IEnumerable<NAAC.Models.NAACTable>)ViewBag.AvailableTables).Any())
+            {
+                @foreach (var table in (IEnumerable<NAAC.Models.NAACTable>)ViewBag.AvailableTables)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <a asp-action="DataEntry" asp-route-tableId="@table.Id" class="text-decoration-none group">
+                            <div class="glass-panel p-5 h-100 border-0 shadow-sm transition-all duration-300 card-selection-premium position-relative overflow-hidden">
+                                <div class="card-glow"></div>
+                                <div class="position-relative z-1">
+                                    <div class="badge-premium mb-4">TABLE @table.TableNumber</div>
+                                    <h4 class="fw-800 text-main mb-3">@table.Name</h4>
+                                    <div class="d-flex align-items-center gap-2 text-secondary small mb-4">
+                                        <i class="bi bi-diagram-3-fill text-primary"></i>
+                                        <span>Criterion @table.Criteria?.Number</span>
+                                    </div>
+                                    <div class="btn-group-premium mt-auto">
+                                        <span>Begin Submission</span>
+                                        <i class="bi bi-arrow-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 text-center py-5">
+                    <div class="glass-panel p-5 d-inline-block shadow-lg border-0" style="max-width: 500px;">
+                        <div class="display-3 opacity-10 mb-4"><i class="bi bi-folder-x"></i></div>
+                        <h3 class="fw-bold mb-3">No Active Assignments</h3>
+                        <p class="text-secondary">Your departmental coordinator hasn't finalized the structural mapping for your assigned criteria yet.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- [Entry Screen] - Executive Form Overhaul -->
+        <div class="row g-5">
+            <!-- Left Panel: Context & Navigation -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 2rem; z-index: 100;">
+                    <a asp-action="DataEntry" class="btn btn-action-back mb-4">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Switch Table</span>
+                    </a>
+
+                    <div class="glass-panel p-4 border-0 shadow-lg mb-4 context-card">
+                        <div class="smaller fw-800 text-primary-dim text-uppercase ls-1 mb-2">Current Context</div>
+                        <h2 class="fw-800 mb-2">@Model.TableNumber</h2>
+                        <p class="text-secondary small mb-4">@Model.Name</p>
+                        
+                        <div class="draft-intelligence glass-panel p-4 border-0 shadow-sm mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-4">
+                                <i class="bi bi-cpu text-primary fs-4"></i>
+                                <span class="smaller fw-800 text-uppercase ls-1">Intelligence Panel</span>
+                            </div>
+
+                            <div class="glass-panel px-4 py-2 d-flex align-items-center gap-3 mb-4">
+                                <i class="bi bi-calendar-check text-primary fs-4"></i>
+                                <div>
+                                    <div class="smaller text-secondary text-uppercase fw-bold ls-1">Active Session</div>
+                                    <div class="small fw-bold">@DateTime.Now.ToString("MMM dd, yyyy")</div>
+                                </div>
+                            </div>
+
+                            <div class="intelligence-card p-3 rounded-4 mb-3">
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                                        <i class="bi bi-info-circle-fill"></i>
+                                    </div>
+                                    <div class="smaller fw-bold text-main">Submission Policy</div>
+                                </div>
+                                <p class="smaller text-secondary-dim mb-0">Records are automatically timestamped and routed to the HOD for institutional verification.</p>
+                            </div>
+
+                            @if (existingRecord != null)
+                            {
+                                <div class="correction-alert p-3 rounded-4">
+                                    <div class="d-flex align-items-center gap-2 mb-2 text-danger">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <span class="smaller fw-800 text-uppercase ls-1">Correction Required</span>
+                                    </div>
+                                    <p class="small text-main italic mb-0">"@existingRecord.Remarks"</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="progress-checklist glass-panel p-4 border-0 shadow-sm">
+                        <div class="smaller fw-bold text-secondary text-uppercase ls-1 mb-3">Requirement Checklist</div>
+                        <div class="check-item d-flex align-items-center gap-3 mb-2 opacity-100" id="check-ay">
+                            <i class="bi bi-circle text-muted"></i>
+                            <span class="small fw-medium text-main">Select Academic Year</span>
+                        </div>
+                        <div class="check-item d-flex align-items-center gap-3 mb-2" id="check-form-data">
+                            <i class="bi bi-circle text-muted"></i>
+                            <span class="small fw-medium text-main">Enter Qualitative Data</span>
+                        </div>
+                        <div class="check-item d-flex align-items-center gap-3" id="check-evidence">
+                            <i class="bi bi-circle text-muted"></i>
+                            <span class="small fw-medium text-main">Attach Evidentiary Proofs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: The High-Fidelity Form -->
+            <div class="col-lg-8">
+                <form id="dynamicEntryForm" asp-action="SaveRecord" asp-controller="Faculty" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="TableId" value="@Model.Id" />
+
+                    <div class="glass-panel p-0 border-0 shadow-lg overflow-hidden entry-form-container">
+                        <!-- Year Selection Header -->
+                        <div class="p-4 p-md-5 border-bottom border-secondary border-opacity-10 bg-theme-panel">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <h4 class="fw-800 mb-1">Reporting Period</h4>
+                                    <p class="smaller text-secondary-dim mb-0">Select the academic Year for this documentation</p>
+                                </div>
+                                <div class="col-md-5 mt-3 mt-md-0">
+                                    <select name="AcademicYear" class="form-select premium-select" required>
+                                        @{
+                                            var currentYearNum = DateTime.Now.Year;
+                                            var startYearNum = currentYearNum;
+                                            var lockedYears = ViewBag.LockedYears as List<string> ?? new List<string>();
+                                            
+                                            for(int i = 0; i < 4; i++)
+                                            {
+                                                var yr = startYearNum - i;
+                                                var ayCurrent = $"{yr}-{(yr + 1).ToString().Substring(2)}";
+                                                var isLocked = lockedYears.Contains(ayCurrent) && existingRecord?.AcademicYear != ayCurrent;
+                                                
+                                                if (isLocked) {
+                                                    <option value="@ayCurrent" disabled>@ayCurrent (Locked: Record Exists)</option>
+                                                } else {
+                                                    <option value="@ayCurrent" selected="@(existingRecord?.AcademicYear == ayCurrent)">@ayCurrent</option>
+                                                }
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Form Body -->
+                        <div class="p-4 p-md-5">
+                            @if (Model.Columns != null && Model.Columns.Any())
+                            {
+                                var childIds = new HashSet<int>();
+                                foreach(var col in Model.Columns) {
+                                    if (col.ParentColumnId.HasValue) childIds.Add(col.Id);
+                                    else if (!string.IsNullOrEmpty(col.DependsOnValue)) {
+                                        if (Model.Columns.Any(p => p.DataType == "Dropdown" && !string.IsNullOrEmpty(p.DropdownOptions) && p.DropdownOptions.Split(',').Select(opt => opt.Trim()).Contains(col.DependsOnValue)))
+                                            childIds.Add(col.Id);
+                                    }
+                                }
+
+                                var topLevelCols = Model.Columns.Where(c => !childIds.Contains(c.Id)).OrderBy(c => c.Order).ToList();
+                                
+                                <div class="row g-4">
+                                    @foreach (var col in topLevelCols)
+                                    {
+                                        var preValue = existingData.ContainsKey(col.HeaderName) ? existingData[col.HeaderName] : (col.HeaderName.Contains("Inst") || col.HeaderName.Contains("Dept") ? ViewBag.UserCollege : "");
+                                        var isTextArea = col.DataType == "Text" || col.HeaderName.Length > 30;
+                                        
+                                        <div class="col-md-@(isTextArea ? "12" : "6") field-group" id="container-@col.Id">
+                                            <div class="d-flex align-items-center gap-2 mb-3">
+                                                <label class="premium-label">@col.HeaderName</label>
+                                                @if(!string.IsNullOrEmpty(col.Description)) {
+                                                    <span class="badge rounded-circle bg-theme-btn text-primary pointer-help" data-bs-toggle="tooltip" title="@col.Description">
+                                                        <i class="bi bi-question-lg" style="font-size: 0.6rem;"></i>
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            @if (col.DataType == "Date") {
+                                                <div class="input-glow-wrapper"><input type="date" name="FormData[@col.HeaderName]" class="premium-input" value="@preValue" required /></div>
+                                            } else if (col.DataType == "Number") {
+                                                <div class="input-glow-wrapper"><input type="number" name="FormData[@col.HeaderName]" step="any" class="premium-input font-monospace" value="@preValue" required /></div>
+                                            } else if (col.DataType == "File" || col.HeaderName.ToLower().Contains("file") || col.HeaderName.ToLower().Contains("document")) {
+                                                <div class="premium-dropzone" id="dropzone-@col.Id">
+                                                    <input type="file" name="FormData[@col.HeaderName]" class="d-none file-input-unique" id="input_@col.Id" />
+                                                    <label for="input_@col.Id" class="w-100 mb-0 pointer">
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="dz-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                                                            <div class="text-start">
+                                                                <div class="small fw-800 text-main dz-filename">@(string.IsNullOrEmpty(preValue) ? "Upload Evidence" : "File Attached")</div>
+                                                                <div class="smaller text-secondary-dim dz-status">@(string.IsNullOrEmpty(preValue) ? "PDF, Images, or DOC" : "Click to replace " + preValue)</div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            } else if (col.DataType == "Dropdown") {
+                                                <div class="input-glow-wrapper">
+                                                    <select name="FormData[@col.HeaderName]" class="premium-input parent-trigger" data-col-id="@col.Id" required>
+                                                        <option value="">-- Choose Option --</option>
+                                                        @foreach (var opt in (col.DropdownOptions ?? "").Split(',')) {
+                                                            var val = opt.Trim();
+                                                            if(!string.IsNullOrEmpty(val)) {
+                                                                <option value="@val" selected="@(preValue == val)">@val</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                            } else if (isTextArea) {
+                                                <div class="input-glow-wrapper"><textarea name="FormData[@col.HeaderName]" class="premium-input" rows="4" required>@preValue</textarea></div>
+                                            } else {
+                                                <div class="input-glow-wrapper">
+                                                    <input type="text" name="FormData[@col.HeaderName]" class="premium-input" value="@preValue" @(col.HeaderName.Contains("Inst") || col.HeaderName.Contains("Dept") ? "readonly" : "") required />
+                                                </div>
+                                            }
+
+                                            <!-- Nested Conditional Fields -->
+                                            @if (col.DataType == "Dropdown") {
+                                                var subs = Model.Columns.Where(c => c.ParentColumnId == col.Id || (c.ParentColumnId == null && !string.IsNullOrEmpty(c.DependsOnValue) && (col.DropdownOptions ?? "").Split(',').Select(o=>o.Trim()).Contains(c.DependsOnValue))).ToList();
+                                                @foreach (var sub in subs) {
+                                                    var subPre = existingData.ContainsKey(sub.HeaderName) ? existingData[sub.HeaderName] : "";
+                                                    var isActive = preValue == sub.DependsOnValue;
+                                                    <div class="mt-3 sub-field @(isActive ? "active" : "d-none")" data-parent-id="@col.Id" data-on-value="@sub.DependsOnValue">
+                                                        <div class="nested-line"></div>
+                                                        <div class="ps-4">
+                                                            <label class="premium-label smaller text-primary mb-2">@sub.HeaderName</label>
+                                                            @if (sub.DataType == "Number") {
+                                                                <input type="number" name="FormData[@sub.HeaderName]" class="premium-input small" value="@subPre" @(isActive ? "" : "disabled") />
+                                                            } else if (sub.DataType == "File") {
+                                                                <input type="file" name="FormData[@sub.HeaderName]" class="premium-input small" @(isActive ? "" : "disabled") />
+                                                            } else {
+                                                                <input type="text" name="FormData[@sub.HeaderName]" class="premium-input small" value="@subPre" @(isActive ? "" : "disabled") />
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Executive Submission Bar -->
+                        <div class="p-4 bg-theme-panel border-top border-secondary border-opacity-10 d-flex justify-content-between align-items-center">
+                            <div class="d-none d-md-block">
+                                <span class="smaller text-secondary-dim fw-medium">All inputs are encrypted and secured.</span>
+                            </div>
+                            <button type="submit" class="btn btn-premium-submit">
+                                <span>Save & Transmit Record</span>
+                                <i class="bi bi-send-fill ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    /* Premium UI Engine - Root Definitions */
+    :root {
+        --dz-bg: rgba(79, 70, 229, 0.03);
+        --dz-border: rgba(79, 70, 229, 0.15);
+    }
+
+    [data-theme="dark"] {
+        --dz-bg: rgba(234, 179, 8, 0.03);
+        --dz-border: rgba(234, 179, 8, 0.1);
+    }
+
+    /* Table Selection Enhancement */
+    .card-selection-premium {
+        border: 1px solid var(--glass-border) !important;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .card-selection-premium:hover {
+        transform: translateY(-10px);
+        background: var(--card-bg);
+        border-color: var(--accent-color) !important;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5) !important;
+    }
+    .card-glow {
+        position: absolute;
+        width: 151.78px; height: 151.78px;
+        left: -50px; top: -50px;
+        background: var(--accent-color);
+        filter: blur(80px);
+        opacity: 0;
+        transition: opacity 0.4s;
+    }
+    .card-selection-premium:hover .card-glow { opacity: 0.15; }
+    
+    .badge-premium {
+        display: inline-block;
+        padding: 5px 12px;
+        background: var(--accent-color);
+        color: white;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 0.65rem;
+        border-radius: 8px;
+        letter-spacing: 1.5px;
+    }
+    [data-theme="dark"] .badge-premium { color: #0f172a; }
+
+    .btn-group-premium {
+        color: var(--accent-color);
+        font-weight: 800;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Form UI Components */
+    .btn-action-back {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        padding: 8px 16px;
+        background: var(--glass-bg);
+        border-radius: 12px;
+        width: fit-content;
+        transition: all 0.2s;
+        border: 1px solid var(--glass-border);
+    }
+    .btn-action-back:hover { color: var(--accent-color); border-color: var(--accent-color); background: var(--card-bg); }
+
+    .context-card { border-left: 5px solid var(--accent-color) !important; }
+    .info-strip { background: rgba(var(--accent-rgb, 79, 114, 229), 0.05); }
+    .correction-alert { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); }
+    
+    .premium-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: #1e293b; /* Deep slate for high visibility in light mode */
+        opacity: 1;
+    }
+    [data-theme="dark"] .premium-label { color: #cbd5e1; opacity: 0.8; }
+
+    .input-glow-wrapper { position: relative; transition: all 0.3s; }
+    .premium-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: var(--input-bg);
+        border: 1.5px solid var(--glass-border);
+        border-radius: 14px;
+        color: var(--text-primary) !important;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-input:focus {
+        outline: none;
+        background: var(--card-bg);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 5px rgba(var(--accent-rgb, 79, 70, 229), 0.1);
+    }
+
+    [data-theme="light"] .premium-input {
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #0f172a !important;
+    }
+
+    .premium-select { 
+        padding: 0.9rem 1.25rem; 
+        border-radius: 14px; 
+        background-color: var(--input-bg); 
+        color: var(--text-primary);
+        border: 1.5px solid var(--glass-border);
+        font-weight: 700;
+    }
+    [data-theme="light"] .premium-select { background: #ffffff; border-color: #d1d5db; color: #0f172a; }
+    [data-theme="dark"] option { background: #1e293b; color: #f8fafc; }
+
+    .premium-dropzone {
+        padding: 1.25rem;
+        border: 2px dashed var(--dz-border);
+        background: var(--dz-bg);
+        border-radius: 16px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    [data-theme="light"] .premium-dropzone { background: #f9fafb; border-color: #d1d5db; }
+    .premium-dropzone:hover { border-color: var(--accent-color); background: rgba(var(--accent-rgb), 0.08); }
+    .dz-icon { 
+        width: 44px; height: 44px; 
+        background: var(--accent-color); 
+        color: white; 
+        border-radius: 12px; 
+        display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    }
+    [data-theme="dark"] .dz-icon { color: #0f172a; }
+
+    .sub-field { 
+        position: relative; 
+        margin-left: 20px; 
+        animation: slideRight 0.3s ease-out;
+    }
+    .nested-line {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+        background: linear-gradient(to bottom, var(--accent-color), transparent);
+        border-radius: 1px;
+    }
+    @@keyframes slideRight { from { opacity: 0; transform: translateX(-10px); } }
+
+    .btn-premium-submit {
+        background: var(--accent-color);
+        color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 14px;
+        border: none;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 10px 25px -5px rgba(var(--accent-rgb), 0.4);
+        transition: all 0.3s;
+    }
+    .btn-premium-submit:hover { transform: translateY(-3px); box-shadow: 0 15px 35px -5px rgba(var(--accent-rgb), 0.6); }
+    [data-theme="dark"] .btn-premium-submit { color: #0f172a; }
+
+    /* Custom Color Helpers */
+    .text-primary-dim { color: var(--text-primary); }
+    .text-main { color: var(--text-primary); }
+    [data-theme="light"] .text-main { color: #0f172a; }
+    .text-secondary-dim { color: var(--text-secondary); }
+    [data-theme="light"] .text-secondary-dim { color: #475569; }
+    .bg-theme-panel { background: rgba(var(--accent-rgb), 0.02); }
+    [data-theme="light"] .bg-theme-panel { background: #f8fafc; }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // [Checklist Intelligence Engine]
+            function updateChecklist() {
+                // 1. Academic Year Check
+                const ayVal = $('select[name="AcademicYear"]').val();
+                toggleCheck('#check-ay', ayVal && ayVal.length > 0);
+
+                // 2. Data Entry Check (Qualitative)
+                let filledInputs = 0;
+                const totalTextInputs = $('.premium-input:not([type="file"]):not([readonly])').length;
+                $('.premium-input:not([type="file"]):not([readonly])').each(function() {
+                    if ($(this).val() && $(this).val().trim().length > 0) filledInputs++;
+                });
+                toggleCheck('#check-form-data', filledInputs > 0, filledInputs === totalTextInputs ? 'text-success' : 'text-primary');
+
+                // 3. Evidence Check
+                let fileCount = 0;
+                $('.file-input-unique').each(function() {
+                    if ($(this).val() || $(this).closest('.premium-dropzone').find('.dz-status').text().includes('Existing')) fileCount++;
+                });
+                toggleCheck('#check-evidence', fileCount > 0);
+            }
+
+            function toggleCheck(selector, isDone, colorClass = 'text-success') {
+                const item = $(selector);
+                const icon = item.find('i');
+                if (isDone) {
+                    item.removeClass('opacity-50').addClass('opacity-100');
+                    icon.removeClass('bi-circle text-muted').addClass('bi-check-circle-fill ' + colorClass);
+                } else {
+                    item.removeClass('opacity-100').addClass('opacity-50');
+                    icon.removeClass('bi-check-circle-fill text-success text-primary').addClass('bi-circle text-muted');
+                }
+            }
+
+            // Listeners
+            $('select[name="AcademicYear"], .premium-input').on('input change', updateChecklist);
+            
+            // Parent-Child Trigger Logic
+            $('.parent-trigger').on('change', function() {
+                var colId = $(this).data('col-id');
+                var val = $(this).val();
+
+                $('.sub-field[data-parent-id="' + colId + '"]').addClass('d-none').removeClass('active');
+                $('.sub-field[data-parent-id="' + colId + '"]').find('input, select').prop('disabled', true);
+
+                var active = $('.sub-field[data-parent-id="' + colId + '"][data-on-value="' + val + '"]');
+                if(active.length) {
+                    active.removeClass('d-none').addClass('active');
+                    active.find('input, select').prop('disabled', false).trigger('change');
+                }
+                updateChecklist();
+            });
+
+            // File Upload Real-time Feedback
+            $('.file-input-unique').on('change', function() {
+                let fname = $(this).val().split('\\').pop();
+                if(fname) {
+                    let parent = $(this).closest('.premium-dropzone');
+                    parent.find('.dz-filename').text("Attached Successfully");
+                    parent.find('.dz-status').text(fname).removeClass('text-secondary-dim').addClass('text-success fw-bold');
+                    parent.css('border-style', 'solid').css('border-color', '#22c55e');
+                }
+                updateChecklist();
+            });
+
+            // Execute on load
+            updateChecklist();
+
+            // Executive Form Submission
+            $('#dynamicEntryForm').on('submit', function(e) {
+                e.preventDefault();
+                let fData = new FormData(this);
+                
+                let btn = $(this).find('.btn-premium-submit');
+                let origText = btn.html();
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span> Transmitting...');
+
+                $.ajax({
+                    url: '@Url.Action("SaveRecord", "Faculty")',
+                    type: 'POST',
+                    data: fData,
+                    processData: false, contentType: false,
+                    success: function(res) {
+                        if(res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Transmission Secure',
+                                text: 'Your documentation has been queued for verification.',
+                                background: 'var(--card-bg)',
+                                color: 'var(--text-primary)',
+                                confirmButtonColor: 'var(--accent-color)'
+                            }).then(() => {
+                                window.location.href = '@Url.Action("ViewRecords", "Faculty", new { tableId = Model?.Id })';
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).html(origText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Submission Blocked',
+                            text: xhr.responseText || 'An error occurred during data transmission.',
+                            background: 'var(--card-bg)',
+                            color: 'var(--text-primary)'
+                        });
+                    }
+                });
+            });
+
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

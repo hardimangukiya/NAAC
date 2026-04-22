@@ -1,0 +1,228 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "System Frameworks";
+}
+
+<div class="animate-fade-in p-2 p-md-0">
+    <!-- Premium Admin Header -->
+    <div class="d-flex justify-content-between align-items-end mb-5 pb-3 border-bottom border-white border-opacity-10 flex-wrap gap-4">
+        <div>
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb smaller text-uppercase ls-1 fw-700 opacity-50 mb-0">
+                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-main">System Control</a></li>
+                    <li class="breadcrumb-item active text-primary" aria-current="page">Criteria Oversight</li>
+                </ol>
+            </nav>
+            <h1 class="display-6 fw-800 mb-0 tracking-tight text-gradient-primary">Accreditation Framework</h1>
+            <p class="text-secondary smaller mt-1 mb-0">High-level institutional monitoring and global framework configuration.</p>
+        </div>
+        <div class="d-flex gap-3 pb-2">
+            <button class="btn btn-action-glass text-secondary"><i class="bi bi-funnel"></i></button>
+            <button class="btn btn-action-glass text-secondary"><i class="bi bi-gear-fill"></i></button>
+        </div>
+    </div>
+
+    <div class="row g-5">
+        <!-- Main Framework Grid -->
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-4">
+                @if (ViewBag.CriteriaStats != null)
+                {
+                    int index = 0;
+                    foreach (var stat in ViewBag.CriteriaStats)
+                    {
+                        index++;
+                        var c = (NAAC.Models.Criteria)stat.Criterion;
+                        <div class="premium-glass-card hover-premium-card stagger-item" style="--item-index: @index">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
+                                    <div class="d-flex gap-4 align-items-center">
+                                        <div class="crit-indicator">
+                                            <span class="num text-white">@c.Number</span>
+                                            <span class="tag text-white">CRIT</span>
+                                        </div>
+                                        <div>
+                                            <h4 class="fw-800 text-main mb-1">@c.Title</h4>
+                                            <p class="text-secondary smaller mb-3 opacity-75">Monitoring @stat.DataPoints data points across institutional departments.</p>
+                                            <div class="d-flex gap-4 flex-wrap">
+                                                <div class="smaller text-secondary d-flex align-items-center">
+                                                    <div class="stat-dot bg-primary me-2 shadow-sm"></div>
+                                                    <span class="fw-bold">@stat.CoordinatorCount</span> <span class="ms-1 opacity-75">Coordinators</span>
+                                                </div>
+                                                <div class="smaller text-secondary d-flex align-items-center">
+                                                    <div class="stat-dot bg-success me-2 shadow-sm"></div>
+                                                    <span class="fw-bold">@stat.DataPoints</span> <span class="ms-1 opacity-75">Metrics tracked</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <a asp-action="ViewCriterionMetrics" asp-route-id="@c.Id" class="btn btn-view-premium rounded-pill px-4 py-2 border-0 shadow-sm">
+                                            <span>Manage Metrics</span>
+                                            <i class="bi bi-arrow-right-short ms-1 fs-5"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="premium-glass-card p-5 text-center border-dashed">
+                        <i class="bi bi-folder-x fs-1 opacity-10 text-primary mb-3"></i>
+                        <h5 class="fw-800 text-main">Framework Empty</h5>
+                        <p class="text-secondary small">No criteria modules have been initialized by the system architect.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Sidebar Config -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4 sticky-top" style="top: 2rem;">
+                <div class="premium-glass-card p-5 border-0 bg-gradient-sidebar relative overflow-hidden">
+                    <div class="glow-orb"></div>
+                    <div class="relative-content">
+                        <div class="stat-icon-large bg-primary bg-opacity-20 text-primary mb-4 shadow-sm">
+                            <i class="bi bi-sliders2"></i>
+                        </div>
+                        <h4 class="fw-800 text-main mb-2">Cycle Configuration</h4>
+                        <p class="text-secondary smaller opacity-75 mb-4">Master control for current accreditation cycle windows and global validation policies.</p>
+                        
+                        <div class="bg-white bg-opacity-5 rounded-4 p-4 border border-white border-opacity-10 mb-5 text-info">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-info-circle-fill mt-1"></i>
+                                <p class="smaller mb-0 opacity-80">Cycle status: <strong>Active</strong>. System metrics are synchronized with institutional department logs.</p>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <a asp-action="DownloadMasterTemplate" class="btn btn-premium-glow py-3 fw-bold smaller text-white ls-1 text-uppercase">
+                                <i class="bi bi-file-earmark-check me-2"></i> MASTER TEMPLATE
+                            </a>
+                            <a asp-action="AuditSummary" class="btn btn-portal-glass py-3 fw-bold smaller text-main ls-1 text-uppercase">
+                                <i class="bi bi-shield-check me-2"></i> AUDIT OVERVIEW
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-info-item">
+                    <div class="icon-box text-success"><i class="bi bi-check-all fs-4"></i></div>
+                    <div>
+                        <div class="text-secondary smaller fw-bold ls-1 uppercase">Infrastructure</div>
+                        <div class="text-main small fw-bold">Framework Integrity Verified</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --text-main: #0f172a;
+        --text-secondary: #64748b;
+        --glass-bg: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(0, 0, 0, 0.08);
+        --accent-primary: #6366f1;
+        --accent-secondary: #a855f7;
+    }
+
+    [data-theme="dark"] {
+        --text-main: #f8fafc;
+        --text-secondary: #94a3b8;
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.08);
+    }
+
+    .text-main { color: var(--text-main) !important; }
+    .text-secondary { color: var(--text-secondary) !important; }
+
+    .fw-800 { font-weight: 800; }
+    .ls-1 { letter-spacing: 1px; }
+    .tracking-tight { letter-spacing: -1px; }
+    .text-gradient-primary {
+        background: linear-gradient(135deg, var(--text-main) 30%, #6366f1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .premium-glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 28px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .hover-premium-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(99, 102, 241, 0.3);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    }
+
+    .crit-indicator {
+        width: 64px; height: 64px;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 18px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        flex-shrink: 0; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    }
+    .crit-indicator .num { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .crit-indicator .tag { font-size: 0.6rem; font-weight: 800; opacity: 0.7; letter-spacing: 1px; }
+
+    .btn-action-glass {
+        width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--glass-border);
+        background: var(--glass-bg); display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-action-glass:hover { transform: scale(1.1); background: rgba(255,255,255,0.2); }
+
+    .btn-view-premium {
+        background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);
+        font-weight: 700; transition: all 0.3s;
+    }
+    .btn-view-premium:hover { background: var(--accent-primary); color: white !important; transform: scale(1.05); border-color: transparent; }
+
+    .btn-premium-glow {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        color: white;
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+        transition: all 0.3s; border: none;
+    }
+    .btn-premium-glow:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6); color: white; }
+
+    .btn-portal-glass {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        transition: all 0.3s;
+        text-decoration: none;
+        text-align: center;
+    }
+    .btn-portal-glass:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--text-main); }
+
+    .bg-gradient-sidebar { background: linear-gradient(165deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0) 100%); }
+    .stat-icon-large { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .glow-orb { position: absolute; top: -10%; right: -10%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%); pointer-events: none; }
+    .relative-content { position: relative; z-index: 2; }
+
+    .glass-info-item {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        border-radius: 20px; padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+    }
+    .icon-box { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; }
+
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .stagger-item {
+        opacity: 0; transform: translateY(20px);
+        animation: staggerFadeIn 0.6s ease forwards;
+        animation-delay: calc(var(--item-index) * 0.1s);
+    }
+    @@keyframes staggerFadeIn { to { opacity: 1; transform: translateY(0); } }
+
+    .breadcrumb-item + .breadcrumb-item::before { color: rgba(0,0,0,0.1) !important; }
+    [data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.1) !important; }
+</style>

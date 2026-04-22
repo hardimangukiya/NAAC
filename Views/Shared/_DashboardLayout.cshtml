@@ -1,0 +1,328 @@
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    var userName = HttpContextAccessor.HttpContext?.Session.GetString("UserName") ?? "HOD User";
+    var userRole = HttpContextAccessor.HttpContext?.Session.GetString("UserRole") ?? "HOD";
+    var userProfilePic = HttpContextAccessor.HttpContext?.Session.GetString("UserProfilePic") ?? "";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NAAC Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/NAAC.styles.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Mobile Header -->
+        <header class="mobile-top-bar d-lg-none">
+            <button id="sidebar-toggle" class="btn-sidebar-toggle">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="mobile-logo">
+                <i class="bi bi-shield-check text-primary me-2"></i>
+                <span class="fw-bold">NAAC</span>
+            </div>
+            <button id="theme-toggle-mobile" class="theme-toggle m-0">
+                <i class="bi bi-sun"></i>
+            </button>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="dashboard-sidebar">
+            <div class="d-flex justify-content-between align-items-center mb-4 d-lg-none">
+                 <span class="fw-bold text-primary">MENU</span>
+                 <button class="btn-sidebar-toggle text-secondary" id="sidebar-close">
+                     <i class="bi bi-x-lg"></i>
+                 </button>
+            </div>
+            <a asp-controller="@userRole" asp-action="Dashboard" class="sidebar-logo">
+                <img src="~/images/naac-logo.png" alt="NAAC Logo" style="height: 60px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" />
+                <i class="bi bi-shield-check me-2" style="display: none;"></i>
+                <span>NAAC</span>
+            </a>
+
+            <ul class="sidebar-nav">
+                @if (userRole == "HOD")
+                {
+                    <li>
+                        <a asp-controller="HOD" asp-action="Dashboard" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="HOD" asp-action="ManageUsers" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageUsers" ? "active" : "")">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Manage Users</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="HOD" asp-action="CriteriaAssignment" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CriteriaAssignment" ? "active" : "")">
+                            <i class="bi bi-person-check-fill"></i>
+                            <span>Assign Criteria</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="HOD" asp-action="Approvals" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Approvals" ? "active" : "")">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span>Approvals</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="HOD" asp-action="AllRecords" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllRecords" ? "active" : "")">
+                            <i class="bi bi-database-check"></i>
+                            <span>All Records</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="HOD" asp-action="Reports" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reports" ? "active" : "")">
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                }
+                else if (userRole == "Faculty")
+                {
+                    <li>
+                        <a asp-controller="Faculty" asp-action="Dashboard" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Faculty" asp-action="MyCriteria" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyCriteria" ? "active" : "")">
+                            <i class="bi bi-journal-text"></i>
+                            <span>My Criteria</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Faculty" asp-action="MyTables" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyTables" ? "active" : "")">
+                            <i class="bi bi-table"></i>
+                            <span>My Tables</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Faculty" asp-action="DataEntry" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "DataEntry" ? "active" : "")">
+                            <i class="bi bi-pencil-square"></i>
+                            <span>Data Entry</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Faculty" asp-action="PendingTasks" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "PendingTasks" ? "active" : "")">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Pending Tasks</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-controller="Faculty" asp-action="ViewRecords" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ViewRecords" ? "active" : "")">
+                            <i class="bi bi-eye-fill"></i>
+                            <span>View Data</span>
+                        </a>
+                    </li>
+                }
+                else if (userRole == "Coordinator")
+                {
+                    <li>
+                        <a asp-controller="Coordinator" asp-action="Dashboard" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Status Hub</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Coordinator" asp-action="ManageCriteria" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ManageCriteria" ? "active" : "")">
+                            <i class="bi bi-collection-fill"></i>
+                            <span>Manage Criteria</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Coordinator" asp-action="ActivityLogs" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "ActivityLogs" ? "active" : "")">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Activity Logs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Coordinator" asp-action="Reports" class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reports" ? "active" : "")">
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+
+            <div class="sidebar-footer mt-auto pt-4 border-top">
+                <a asp-controller="Account" asp-action="Profile" class="d-flex align-items-center mb-3 p-2 rounded-3 text-decoration-none sidebar-profile-link">
+                    <div class="avatar-circle me-3 bg-accent text-white d-flex align-items-center justify-content-center overflow-hidden" style="width: 42px; height: 42px; border-radius: 50%; background: var(--accent-color); font-weight: bold; flex-shrink: 0;">
+                        @if (!string.IsNullOrEmpty(userProfilePic)) {
+                            <img src="@userProfilePic" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;" />
+                        } else {
+                            @(string.IsNullOrEmpty(userName) ? "U" : userName.Substring(0, 1).ToUpper())
+                        }
+                    </div>
+                    <div class="overflow-hidden flex-grow-1">
+                        <div class="small fw-bold text-truncate text-primary" style="max-width: 140px;">@userName</div>
+                        <div class="smaller text-secondary">@userRole</div>
+                    </div>
+                    <i class="bi bi-chevron-right smaller text-secondary ms-2 opacity-50"></i>
+                </a>
+
+                <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-danger btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <header class="d-flex justify-content-between align-items-center mb-5">
+                <div>
+                    <h2 class="mb-1">@ViewData["Title"]</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#">@userRole</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button id="theme-toggle" class="theme-toggle m-0">
+                        <i id="theme-icon" class="bi bi-sun"></i>
+                    </button>
+                    <div class="glass-panel px-3 py-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar3 text-primary"></i>
+                        <span class="small fw-medium">@DateTime.Now.ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+            </header>
+
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
+    <script>
+        $(document).ready(function() {
+            $('#sidebar-toggle').on('click', function() {
+                $('#dashboard-sidebar').addClass('active');
+            });
+            $('#sidebar-close').on('click', function() {
+                $('#dashboard-sidebar').removeClass('active');
+            });
+            
+            // Link theme toggle on mobile to main toggle
+            $('#theme-toggle-mobile').on('click', function() {
+                $('#theme-toggle').trigger('click');
+            });
+        });
+
+        function globalViewTableData(tableId, targetNo, targetName, url, tableNumberParam = null) {
+            $('#globalViewerTableNo').text('Table ' + targetNo);
+            $('#globalViewerTableName').text(targetName);
+            $('#globalViewerLoader').removeClass('d-none');
+            $('#globalViewerContent').addClass('d-none').empty();
+            $('#globalViewerEmpty').addClass('d-none');
+
+            var offcanvas = new bootstrap.Offcanvas(document.getElementById('globalDataViewerOffcanvas'));
+            offcanvas.show();
+
+            let dataObj = tableId ? { tableId: tableId } : { tableNumber: tableNumberParam };
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                data: dataObj,
+                success: function(records) {
+                    $('#globalViewerLoader').addClass('d-none');
+
+                    if(records && records.length > 0) {
+                        let html = '';
+                        records.forEach(function(r) {
+                            let statusClass = r.status === 'Verified' ? 'bg-success text-success' : (r.status === 'Submitted' ? 'bg-primary text-primary' : (r.status === 'Rejected' ? 'bg-danger text-danger' : 'bg-secondary text-secondary'));
+                            
+                            let parsedDataText = '';
+                            try {
+                                let jsonObj = JSON.parse(r.jsonData);
+                                for (const [key, value] of Object.entries(jsonObj)) {
+                                    if(value) {
+                                        parsedDataText += `<div class="mb-2"><div class="smaller text-uppercase text-secondary fw-bold" style="font-size: 0.65rem;">${key}</div><div class="small fw-medium text-break">${value}</div></div>`;
+                                    }
+                                }
+                            } catch(e) { parsedDataText = '<div class="small text-muted italic">Invalid data format</div>'; }
+
+                            html += `
+                            <div class="glass-panel p-4 border-0 shadow-sm mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-10">
+                                    <div class="fw-bold fs-5">${r.academicYear}</div>
+                                    <span class="badge ${statusClass} bg-opacity-10 smaller">${r.status}</span>
+                                </div>
+                                ${parsedDataText}
+                                <div class="text-end mt-3 pt-2 border-top border-secondary border-opacity-10">
+                                    <span class="smaller text-secondary italic">Submitted on ${r.createdAt}</span>
+                                </div>
+                            </div>`;
+                        });
+                        $('#globalViewerContent').html(html).removeClass('d-none');
+                    } else {
+                        $('#globalViewerEmpty').removeClass('d-none');
+                    }
+                },
+                error: function() {
+                    $('#globalViewerLoader').addClass('d-none');
+                    $('#globalViewerEmpty').removeClass('d-none').html('<div class="text-danger"><i class="bi bi-x-circle fs-2"></i><p>Error loading data</p></div>');
+                }
+            });
+        }
+    </script>
+
+    <!-- Global Right Side Data Viewer (Offcanvas) -->
+    <div class="offcanvas offcanvas-end shadow-lg" tabindex="-1" id="globalDataViewerOffcanvas" style="width: 500px; max-width: 90vw; background: var(--glass-bg); backdrop-filter: blur(12px);">
+        <div class="offcanvas-header border-bottom border-secondary border-opacity-10 py-4">
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary mb-1" id="globalViewerTableNo">Table</span>
+                <h5 class="offcanvas-title fw-bold" id="globalViewerTableName">Loading...</h5>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body position-relative">
+            <div id="globalViewerLoader" class="position-absolute top-50 start-50 translate-middle text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="small text-secondary mt-2 fw-bold">Fetching Data...</div>
+            </div>
+            <div id="globalViewerContent" class="d-none"></div>
+            <div id="globalViewerEmpty" class="d-none text-center py-5">
+                <div class="opacity-25 mb-3"><i class="bi bi-journal-x fs-1"></i></div>
+                <h6 class="text-secondary">No Documentation Found</h6>
+                <p class="smaller text-muted">You haven't submitted any records for this table yet.</p>
+            </div>
+        </div>
+    </div>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

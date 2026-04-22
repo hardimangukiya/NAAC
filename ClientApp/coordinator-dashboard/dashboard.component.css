@@ -1,0 +1,58 @@
+.dashboard-container {
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.stat-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.progress-circle {
+    width: 150px;
+    height: 150px;
+    border: 8px solid #f1f5f9;
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.smaller {
+    font-size: 0.75rem;
+}
+
+.notification-item:last-child {
+    border-bottom: none !important;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+table thead th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.form-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.italic {
+    font-style: italic;
+}
+
+#barChart, #pieChart, #lineChart {
+    max-height: 100%;
+    width: 100%;
+}

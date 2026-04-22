@@ -1,0 +1,176 @@
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Faculty Portal";
+}
+
+<div class="animate-fade-in">
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <a asp-action="MyCriteria" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold">My Assignments</div>
+                        <i class="bi bi-journal-text text-primary fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.AssignedTasks</div>
+                    <div class="small text-secondary">Criteria sections assigned</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-action="ViewRecords" asp-route-status="Verified" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left-color: #22c55e; cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold">Completed</div>
+                        <i class="bi bi-check2-circle text-success fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.CompletedTasks</div>
+                    <div class="small text-secondary">Verified documentation</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-action="PendingTasks" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left-color: #f59e0b; cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold">Pending Submission</div>
+                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1">@ViewBag.PendingSubmissions</div>
+                    <div class="small text-secondary">Awaiting your data entry</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-action="ViewRecords" asp-route-status="Rejected" class="text-decoration-none h-100 d-block">
+                <div class="glass-panel p-4 h-100 stat-card" style="border-left-color: #ef4444; cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-secondary small text-uppercase fw-bold">Rejected</div>
+                        <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                    </div>
+                    <div class="h1 fw-bold mb-1 @(ViewBag.RejectedTasks > 0 ? "text-danger animate-pulse" : "")">@ViewBag.RejectedTasks</div>
+                    <div class="small text-secondary">Need resubmission</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="glass-panel p-5 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">My Task Progress</h3>
+                    <a asp-action="MyTables" class="btn btn-sm btn-link text-decoration-none">View All</a>
+                </div>
+                
+                <div class="task-list">
+                    @if (ViewBag.TaskProgress != null && ((IEnumerable<dynamic>)ViewBag.TaskProgress).Any())
+                    {
+                        @foreach (var task in (IEnumerable<dynamic>)ViewBag.TaskProgress)
+                        {
+                            <div class="task-item mb-4 p-3 rounded-4 border border-secondary border-opacity-10 hover-bg transition-300">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary smaller">@task.TableNumber</span>
+                                        <span class="fw-bold">@task.Name</span>
+                                    </div>
+                                    <span class="badge @(task.Status == "Verified" || task.Status == "Finalized" ? "bg-success" : (task.Status == "Submitted" ? "bg-warning text-dark" : (task.Status == "Rejected" ? "bg-danger" : "bg-secondary"))) smaller">
+                                        @task.Status
+                                    </span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
+                                    <div class="progress-bar @(task.Status == "Verified" || task.Status == "Finalized" ? "bg-success" : (task.Status == "Submitted" ? "bg-warning" : (task.Status == "Rejected" ? "bg-danger" : "bg-primary")))" 
+                                         role="progressbar" style="width: @task.Progress%;" aria-valuenow="@task.Progress" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="smaller @(task.Status == "Rejected" ? "text-danger fw-bold" : "text-secondary")">
+                                        <i class="bi @(task.Status == "Rejected" ? "bi-exclamation-triangle" : "bi-info-circle") me-1"></i> 
+                                        @(task.Status == "Not Started" ? "Action required" : (task.Status == "Rejected" ? "HOD rejected this submission" : $"Current Status: {task.Status}"))
+                                    </span>
+                                    <a asp-action="@(task.Status == "Verified" || task.Status == "Finalized" ? "ViewRecords" : "DataEntry")" asp-route-tableId="@task.TableId" class="btn btn-sm p-0 smaller fw-bold @(task.Status == "Rejected" ? "text-danger" : (task.Status == "Verified" || task.Status == "Finalized" ? "text-success" : "text-primary"))">
+                                        @(task.Status == "Not Started" ? "Begin Entry" : (task.Status == "Rejected" ? "Fix & Resubmit" : (task.Status == "Verified" || task.Status == "Finalized" ? "View Data" : "Edit Data"))) <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 opacity-50">
+                            <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
+                            <p>No tasks currently assigned to you.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="glass-panel p-4 h-100">
+                <h4 class="mb-4">Recent Activity</h4>
+                <div class="list-group list-group-flush bg-transparent">
+                    @if (ViewBag.RecentActivity != null && ((IEnumerable<NAAC.Models.ActivityLog>)ViewBag.RecentActivity).Any())
+                    {
+                        @foreach (var log in (IEnumerable<NAAC.Models.ActivityLog>)ViewBag.RecentActivity)
+                        {
+                            <div class="list-group-item bg-transparent border-secondary border-opacity-10 px-0 py-3">
+                                <div class="d-flex gap-3">
+                                    <div class="icon-circle @(log.Action.Contains("Added") ? "bg-success" : "bg-primary") bg-opacity-10 @(log.Action.Contains("Added") ? "text-success" : "text-primary") small">
+                                        <i class="bi @(log.Action.Contains("Added") ? "bi-plus-circle" : "bi-lightning")"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="small fw-bold text-truncate">@log.Action</div>
+                                        <div class="smaller text-secondary text-truncate">@log.Details</div>
+                                        <div class="smaller text-muted mt-1" style="font-size: 0.65rem;">
+                                            <i class="bi bi-clock me-1"></i> @log.Timestamp.ToString("MMM dd, HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 opacity-50 smaller">
+                            No recent activity found.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        backdrop-filter: blur(4px);
+    }
+    .smaller { font-size: 0.75rem; }
+    .stat-card { transition: transform 0.3s ease; border-left: 4px solid var(--accent-color); }
+    .stat-card:hover { transform: translateY(-5px); }
+    .hover-bg { transition: all 0.3s ease; }
+    .hover-bg:hover { background: rgba(255,255,255,0.02); }
+
+    /* Faculty Visibility Fixes */
+    .list-group-item .fw-bold { color: var(--text-primary) !important; }
+    .list-group-item .text-secondary { color: var(--text-secondary) !important; opacity: 0.8; }
+    .list-group-item .text-muted { color: var(--text-secondary) !important; opacity: 0.6; }
+
+    [data-theme="dark"] .text-secondary { color: #94a3b8 !important; }
+    [data-theme="dark"] .text-muted { color: #64748b !important; }
+
+    @@keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+</style>
